@@ -678,6 +678,31 @@ function quickAddToCart(productId) {
   setTimeout(() => cartTrigger.style.transform = 'none', 200);
 }
 
+// Shows a brief toast at the bottom with item name + "Proceed to Cart" CTA
+let toastTimer = null;
+function showAddedToast(productName) {
+  // Reuse existing toast or create it
+  let toast = document.getElementById('rs-added-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'rs-added-toast';
+    toast.innerHTML = `
+      <span id="rs-toast-msg"></span>
+      <button id="rs-toast-cta" onclick="document.getElementById('cart-drawer').classList.add('open'); document.getElementById('rs-added-toast').classList.remove('visible');">
+        Proceed to Cart &rarr;
+      </button>
+    `;
+    document.body.appendChild(toast);
+  }
+
+  document.getElementById('rs-toast-msg').textContent = `\u2713 ${productName} added`;
+
+  // Reset and show
+  clearTimeout(toastTimer);
+  toast.classList.add('visible');
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 3500);
+}
+
 function addToCart(productId, weight, price, quantity) {
   const product = state.products.find(p => p.id === productId);
   if (!product) return;
@@ -698,9 +723,9 @@ function addToCart(productId, weight, price, quantity) {
 
   saveCart();
   updateCartUI();
-  
-  // Auto-open cart drawer to show progress
-  document.getElementById('cart-drawer').classList.add('open');
+
+  // Show a toast with "Proceed to Cart" instead of auto-opening the drawer
+  showAddedToast(product.name);
 }
 
 function updateCartQty(productId, weight, amount) {
