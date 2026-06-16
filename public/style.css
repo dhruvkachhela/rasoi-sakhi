@@ -27,12 +27,12 @@
   --font-heading: 'Cormorant Garamond', serif;
   --font-body: 'Manrope', sans-serif;
 
-  /* Editorial Spacing (1.5x current spacing) */
-  --spacing-xs: 1.125rem;
-  --spacing-sm: 2.25rem;
-  --spacing-md: 3.75rem;
-  --spacing-lg: 6.75rem;
-  --spacing-xl: 11.25rem;
+  /* Editorial Spacing (Balanced, no excess negative space) */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 3.5rem;
+  --spacing-xl: 5.5rem;
 
   /* Layout Constants */
   --header-height: 80px; /* Slightly taller header for editorial feel */
@@ -639,79 +639,72 @@ button, input, select, textarea {
   line-height: 1.65;
 }
 
-/* --- THE 9-STEP PROCESS TIMELINE (HORIZONTAL WAVY) --- */
+/* --- THE 9-STEP PROCESS TIMELINE (VERTICAL CURVY) --- */
 .process-section {
   background-color: var(--color-bg-pure);
   padding: var(--spacing-lg) var(--spacing-sm);
-  overflow: hidden;
-}
-
-.timeline-scroll-container {
-  width: 100%;
-  overflow-x: auto;
-  padding-bottom: 20px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Hide scrollbar for clean look */
-}
-
-.timeline-scroll-container::-webkit-scrollbar {
-  display: none;
-}
-
-.timeline-scroll-wrapper {
-  display: flex;
-  width: 2700px; /* 9 steps * 300px = 2700px */
   position: relative;
-  padding: 40px 0;
 }
 
-.wavy-line-svg {
+.timeline-container {
+  position: relative;
+  max-width: 650px;
+  margin: 0 auto;
+  padding: var(--spacing-sm) 0;
+}
+
+/* Wavy vertical connecting line */
+.vertical-wavy-line-svg {
   position: absolute;
-  left: 0;
-  top: 61px; /* Centers with step icons */
-  width: 2700px;
-  height: 50px;
+  left: 20px;
+  top: 10px;
+  bottom: 10px;
+  width: 40px;
+  height: calc(100% - 20px);
   z-index: 0;
   pointer-events: none;
 }
 
 .timeline-step {
-  width: 300px; /* Fixed step width */
-  flex-shrink: 0;
+  position: relative;
+  padding-left: 80px;
+  margin-bottom: var(--spacing-md);
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  padding: 0 20px;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.timeline-step:last-child {
+  margin-bottom: 0;
 }
 
 .step-num {
   position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 70px;
+  top: -15px;
   font-family: var(--font-heading);
-  font-size: 3.5rem;
+  font-size: 2.2rem;
   font-weight: 300;
   color: var(--color-primary-light);
-  opacity: 0.25;
+  opacity: 0.35;
   z-index: -1;
 }
 
 .step-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--color-border-soft);
-  background-color: var(--color-bg-pure); /* Mask behind wavy line */
+  position: absolute;
+  left: 28px; /* Centered along the 40px wide vertical wavy path (20px + 20px offset) */
+  top: 4px;
+  width: 24px;
+  height: 24px;
   color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  background-color: transparent; /* Strictly no box background */
+  border: none; /* Strictly no box borders */
+  box-shadow: none; /* Strictly no box shadows */
 }
 
 .step-icon svg {
@@ -719,16 +712,20 @@ button, input, select, textarea {
   height: 20px;
 }
 
+.step-content {
+  max-width: 500px;
+}
+
 .step-title {
   font-family: var(--font-heading);
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text-dark);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .step-desc {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
   line-height: 1.6;
 }
@@ -1872,6 +1869,56 @@ button, input, select, textarea {
   .why-us-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-md);
+  }
+
+  /* Vertical Wavy Timeline Desktop Centering */
+  .vertical-wavy-line-svg {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+  }
+
+  .timeline-container {
+    max-width: 1000px;
+  }
+
+  .timeline-step {
+    width: 50%;
+    padding-left: 0;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  /* Odd steps (left side, right aligned) */
+  .timeline-step:nth-child(odd) {
+    align-items: flex-end;
+    text-align: right;
+    padding-right: 50px;
+  }
+
+  .timeline-step:nth-child(odd) .step-icon {
+    left: auto;
+    right: -12px;
+  }
+
+  .timeline-step:nth-child(odd) .step-num {
+    left: auto;
+    right: 45px;
+  }
+
+  /* Even steps (right side, left aligned) */
+  .timeline-step:nth-child(even) {
+    margin-left: 50%;
+    align-items: flex-start;
+    text-align: left;
+    padding-left: 50px;
+  }
+
+  .timeline-step:nth-child(even) .step-icon {
+    left: -12px;
+  }
+
+  .timeline-step:nth-child(even) .step-num {
+    left: 45px;
   }
 
   /* Contact layout split */
