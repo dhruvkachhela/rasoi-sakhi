@@ -212,7 +212,18 @@ app.post('/api/orders', async (req, res) => {
                             `Thank you for shopping with Rasoi Sakhi!`;
 
     const encodedMsg = encodeURIComponent(whatsappMessage);
-    const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodedMsg}`;
+    
+    // Sanitize phone number (remove any non-digits like +, spaces, etc.)
+    let targetPhone = (settings.whatsappNumber || "").replace(/[^0-9]/g, '');
+    // If it's a 10-digit Indian number without a country code, prepend '91'
+    if (targetPhone.length === 10 && /^[6-9]/.test(targetPhone)) {
+      targetPhone = '91' + targetPhone;
+    }
+    // Fallback if empty or invalid
+    if (!targetPhone) {
+      targetPhone = '919099113823';
+    }
+    const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedMsg}`;
 
     res.json({
       success: true,
