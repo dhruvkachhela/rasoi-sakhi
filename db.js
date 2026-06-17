@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
 
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
+let inMemoryPaymentMappings = {};
 
 // Initialize database template
 const defaultDatabase = {
@@ -546,22 +547,37 @@ module.exports = {
   },
 
   savePaymentMapping: async (razorpayOrderId, orderId, extraData = {}) => {
-    const filePath = path.join(__dirname, 'data', 'payment_mappings.json');
+    const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+    const filePath = isVercel ? path.join('/tmp', 'payment_mappings.json') : path.join(__dirname, 'data', 'payment_mappings.json');
     try {
       let mappings = {};
-      if (fs.existsSync(filePath)) {
-        mappings = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      try {
+        if (fs.existsSync(filePath)) {
+          mappings = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        } else {
+          mappings = { ...inMemoryPaymentMappings };
+        }
+      } catch (readErr) {
+        mappings = { ...inMemoryPaymentMappings };
       }
+      
       mappings[razorpayOrderId] = {
         orderId,
         createdAt: new Date().toISOString(),
         ...extraData
       };
+      
+      inMemoryPaymentMappings = mappings;
+
       const dataDir = path.dirname(filePath);
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
+      try {
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, JSON.stringify(mappings, null, 2));
+      } catch (writeErr) {
+        console.warn("Error writing payment mapping to file, using in-memory:", writeErr.message);
       }
-      fs.writeFileSync(filePath, JSON.stringify(mappings, null, 2));
       return true;
     } catch (err) {
       console.error("Error saving payment mapping:", err);
@@ -570,16 +586,40 @@ module.exports = {
   },
 
   getPaymentMapping: async (razorpayOrderId) => {
-    const filePath = path.join(__dirname, 'data', 'payment_mappings.json');
+    const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+    const filePath = isVercel ? path.join('/tmp', 'payment_mappings.json') : path.join(__dirname, 'data', 'payment_mappings.json');
     try {
       if (fs.existsSync(filePath)) {
         const mappings = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        return mappings[razorpayOrderId] || null;
+        return mappings[razorpayOrderId] || inMemoryPaymentMappings[razorpayOrderId] || null;
       }
     } catch (err) {
       console.error("Error reading payment mapping:", err);
     }
-    return null;
+    return inMemoryPaymentMappings[razorpayOrderId] || null;
+  },
+
+  getPaymentMappingByOrderId: async (orderId) => {
+    const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+    const filePath = isVercel ? path.join('/tmp', 'payment_mappings.json') : path.join(__dirname, 'data', 'payment_mappings.json');
+    try {
+      let mappings = {};
+      try {
+        if (fs.existsSync(filePath)) {
+          mappings = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        } else {
+          mappings = { ...inMemoryPaymentMappings };
+        }
+      } catch (readErr) {
+        mappings = { ...inMemoryPaymentMappings };
+      }
+      const rzpOrderId = Object.keys(mappings).find(key => mappings[key].orderId === orderId);
+      return rzpOrderId ? mappings[rzpOrderId] : null;
+    } catch (err) {
+      console.error("Error retrieving mapping by order ID:", err);
+    }
+    const rzpOrderId = Object.keys(inMemoryPaymentMappings).find(key => inMemoryPaymentMappings[key].orderId === orderId);
+    return rzpOrderId ? inMemoryPaymentMappings[rzpOrderId] : null;
   },
 
   uploadProductImage: async (filename, buffer, mimeType) => {

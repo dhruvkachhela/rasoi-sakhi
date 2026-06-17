@@ -26,12 +26,20 @@ if (process.env.RAZORPAY_KEY_ID &&
   console.log("Razorpay key configurations missing or placeholders detected in env. Online payments will fall back to simulation.");
 }
 
-const READ_ORDERS_PATH = path.join(__dirname, 'data', 'read_orders.json');
+const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+const dataDir = isVercel ? '/tmp' : path.join(__dirname, 'data');
+const READ_ORDERS_PATH = path.join(dataDir, 'read_orders.json');
 
-// Ensure data directory exists
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-  fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+// Ensure data directory exists safely (won't crash on read-only filesystems)
+try {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn("Unable to create data directory, falling back to runtime memory:", err.message);
 }
+
+let inMemoryReadOrders = [];
 
 function getReadOrders() {
   try {
@@ -41,7 +49,7 @@ function getReadOrders() {
   } catch (e) {
     console.error("Error reading read_orders.json:", e);
   }
-  return [];
+  return inMemoryReadOrders;
 }
 
 function markOrderAsRead(orderId) {
@@ -49,12 +57,18 @@ function markOrderAsRead(orderId) {
     const readOrders = getReadOrders();
     if (!readOrders.includes(orderId)) {
       readOrders.push(orderId);
+      if (!inMemoryReadOrders.includes(orderId)) {
+        inMemoryReadOrders.push(orderId);
+      }
       fs.writeFileSync(READ_ORDERS_PATH, JSON.stringify(readOrders, null, 2));
     }
     return true;
   } catch (e) {
-    console.error("Error writing read_orders.json:", e);
-    return false;
+    console.warn("Error writing read_orders.json, using in-memory backup:", e.message);
+    if (!inMemoryReadOrders.includes(orderId)) {
+      inMemoryReadOrders.push(orderId);
+    }
+    return true;
   }
 }
 
@@ -432,16 +446,8 @@ app.get('/api/orders/:id/verify-payment', async (req, res) => {
     }
 
     // Check mapping to see if this is a simulated transaction
-    const mappingsPath = path.join(__dirname, 'data', 'payment_mappings.json');
-    let isSimulated = false;
-    
-    if (fs.existsSync(mappingsPath)) {
-      const mappings = JSON.parse(fs.readFileSync(mappingsPath, 'utf8') || '{}');
-      const rzpOrderId = Object.keys(mappings).find(key => mappings[key].orderId === orderId);
-      if (rzpOrderId && mappings[rzpOrderId].isSimulated) {
-        isSimulated = true;
-      }
-    }
+    const mapping = await db.getPaymentMappingByOrderId(orderId);
+    const isSimulated = mapping ? !!mapping.isSimulated : false;
 
     // DX Feature: auto-resolve simulated transactions on client request
     if (isSimulated) {
