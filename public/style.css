@@ -1470,6 +1470,22 @@ button, input, select, textarea {
   padding: var(--spacing-md) var(--spacing-sm);
 }
 
+.prod-modal-drag-handle {
+  width: 44px;
+  height: 5px;
+  background-color: var(--color-border-soft);
+  border-radius: 3px;
+  margin: -4px auto 16px;
+  cursor: grab;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .prod-modal-drag-handle {
+    display: none;
+  }
+}
+
 .prod-modal-overlay.open .prod-modal {
   transform: translateY(0);
 }

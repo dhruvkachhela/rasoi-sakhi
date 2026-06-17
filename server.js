@@ -22,51 +22,8 @@ const db = require('./db');
 //   razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
 // }
 
-const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
-const dataDir = isVercel ? '/tmp' : path.join(__dirname, 'data');
-const READ_ORDERS_PATH = path.join(dataDir, 'read_orders.json');
-
-// Ensure data directory exists safely (won't crash on read-only filesystems)
-try {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-} catch (err) {
-  console.warn("Unable to create data directory, falling back to runtime memory:", err.message);
-}
-
-let inMemoryReadOrders = [];
-
-function getReadOrders() {
-  try {
-    if (fs.existsSync(READ_ORDERS_PATH)) {
-      return JSON.parse(fs.readFileSync(READ_ORDERS_PATH, 'utf8'));
-    }
-  } catch (e) {
-    console.error("Error reading read_orders.json:", e);
-  }
-  return inMemoryReadOrders;
-}
-
-function markOrderAsRead(orderId) {
-  try {
-    const readOrders = getReadOrders();
-    if (!readOrders.includes(orderId)) {
-      readOrders.push(orderId);
-      if (!inMemoryReadOrders.includes(orderId)) {
-        inMemoryReadOrders.push(orderId);
-      }
-      fs.writeFileSync(READ_ORDERS_PATH, JSON.stringify(readOrders, null, 2));
-    }
-    return true;
-  } catch (e) {
-    console.warn("Error writing read_orders.json, using in-memory backup:", e.message);
-    if (!inMemoryReadOrders.includes(orderId)) {
-      inMemoryReadOrders.push(orderId);
-    }
-    return true;
-  }
-}
+// isRead state is now persisted permanently in the Supabase 'orders' table.
+// No more ephemeral read_orders.json file that would reset on server restart.
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -238,7 +195,7 @@ app.post('/api/orders', async (req, res) => {
       subtotal,
       deliveryCharge,
       totalAmount,
-      status: (paymentMethod.toLowerCase().includes('online') || paymentMethod.toLowerCase().includes('razorpay')) ? "Payment Pending" : "Pending",
+      status: "Pending",
       createdAt: new Date().toISOString()
     };
 
@@ -384,12 +341,8 @@ app.post('/api/admin/settings', authenticateAdmin, async (req, res) => {
 app.get('/api/admin/orders', authenticateAdmin, async (req, res) => {
   try {
     const orders = await db.getCollection('orders');
-    const readOrders = getReadOrders();
-    const ordersWithReadStatus = orders.map(order => ({
-      ...order,
-      isRead: readOrders.includes(order.id)
-    }));
-    res.json(ordersWithReadStatus);
+    // isRead is stored in the DB itself — no file merging needed
+    res.json(orders);
   } catch (err) {
     console.error("Error fetching orders:", err);
     res.status(500).json({ error: "Could not fetch orders." });
@@ -406,11 +359,11 @@ app.post('/api/admin/orders/:id/status', authenticateAdmin, async (req, res) => 
   try {
     const updatedOrder = await db.updateOrderStatus(req.params.id, status);
     if (updatedOrder) {
-      // Automatically mark as read when status is updated
-      markOrderAsRead(req.params.id);
-      
+      // Automatically mark as read when admin updates the status
+      await db.updateOrderRead(req.params.id, true);
+
       res.json({ success: true, order: { ...updatedOrder, isRead: true } });
-      
+
       // Sync status change to Google Sheets webhook
       try {
         const settings = await db.getSettings();
@@ -429,10 +382,10 @@ app.post('/api/admin/orders/:id/status', authenticateAdmin, async (req, res) => 
   }
 });
 
-// Mark Order as Read
+// Mark Order as Read (persists permanently in DB)
 app.post('/api/admin/orders/:id/read', authenticateAdmin, async (req, res) => {
   try {
-    markOrderAsRead(req.params.id);
+    await db.updateOrderRead(req.params.id, true);
     res.json({ success: true });
   } catch (err) {
     console.error("Error marking order as read:", err);

@@ -916,7 +916,6 @@ function doPost(e) {
                 <select id="cust-payment" required>
                   <option value="Cash On Delivery">Cash On Delivery</option>
                   <option value="UPI Payment">UPI Payment (QR Scan)</option>
-                  <option value="Online Payment">Online UPI / Card / Netbanking (Razorpay)</option>
                 </select>
               </div>
             </div>
@@ -937,6 +936,7 @@ function doPost(e) {
   <!-- Product Detail bottom sheet / modal -->
   <div class="prod-modal-overlay" id="product-detail-modal">
     <div class="prod-modal">
+      <div class="prod-modal-drag-handle"></div>
       <button class="prod-modal-close" id="product-modal-close-btn">&times;</button>
       
       <div class="prod-modal-body">

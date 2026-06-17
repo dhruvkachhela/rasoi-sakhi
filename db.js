@@ -546,6 +546,32 @@ module.exports = {
     }
   },
 
+  // Persist the "read" flag permanently in the database
+  updateOrderRead: async (orderId, isRead = true) => {
+    if (useSupabase) {
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ isRead })
+        .eq('id', orderId)
+        .select()
+        .single();
+      if (error) {
+        console.error("Supabase error marking order as read:", error);
+        return false;
+      }
+      return true;
+    } else {
+      const db = readDB();
+      const order = db.orders.find(o => o.id === orderId);
+      if (order) {
+        order.isRead = isRead;
+        return writeDB(db);
+      }
+      return false;
+    }
+  },
+
+  /*
   savePaymentMapping: async (razorpayOrderId, orderId, extraData = {}) => {
     const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
     const filePath = isVercel ? path.join('/tmp', 'payment_mappings.json') : path.join(__dirname, 'data', 'payment_mappings.json');
@@ -621,6 +647,7 @@ module.exports = {
     const rzpOrderId = Object.keys(inMemoryPaymentMappings).find(key => inMemoryPaymentMappings[key].orderId === orderId);
     return rzpOrderId ? inMemoryPaymentMappings[rzpOrderId] : null;
   },
+  */
 
   uploadProductImage: async (filename, buffer, mimeType) => {
     if (useSupabase) {

@@ -17,7 +17,8 @@ let state = {
   adminToken: localStorage.getItem('rs_admin_token') || null,
   adminSettings: null,
   knownOrderIds: new Set(),
-  hasInitiallyLoadedOrders: false
+  hasInitiallyLoadedOrders: false,
+  modalHistoryPushed: false
 };
 
 // --- INITIALIZATION ---
@@ -34,6 +35,9 @@ function initApp() {
   
   // Handle URL hash routing if present
   handleHashRoute();
+
+  // Setup mobile-friendly bottom-sheet swipe logic
+  setupSwipeToClose();
 
   // If already logged in, fetch admin details
   if (state.adminToken) {
@@ -559,10 +563,10 @@ function setupEventListeners() {
 
   const detailModal = document.getElementById('product-detail-modal');
   document.getElementById('product-modal-close-btn').addEventListener('click', () => {
-    detailModal.classList.remove('open');
+    closeProductDetails();
   });
   detailModal.addEventListener('click', (e) => {
-    if (e.target === detailModal) detailModal.classList.remove('open');
+    if (e.target === detailModal) closeProductDetails();
   });
 
   // Terms and Privacy Modals Event Listeners
@@ -610,7 +614,7 @@ function setupEventListeners() {
   document.getElementById('detail-add-to-cart-btn').addEventListener('click', () => {
     if (!state.selectedProduct || !state.selectedWeight) return;
     addToCart(state.selectedProduct.id, state.selectedWeight.weight, state.selectedWeight.price, state.selectedQty);
-    detailModal.classList.remove('open');
+    closeProductDetails();
   });
 
   // Checkout Form Submission
@@ -776,6 +780,13 @@ function openProductDetails(id) {
   }
 
   updateDetailPrice();
+  
+  // Push state to handle back button close
+  if (!state.modalHistoryPushed) {
+    history.pushState({ modal: 'product-detail' }, '');
+    state.modalHistoryPushed = true;
+  }
+
   document.getElementById('product-detail-modal').classList.add('open');
 }
 
@@ -1918,5 +1929,97 @@ function prefillCheckoutForm() {
   } catch (err) {
     console.error("Error prefilling checkout details:", err);
   }
+}
+
+// Close details modal and pop history state if pushed
+function closeProductDetails() {
+  const detailModal = document.getElementById('product-detail-modal');
+  if (detailModal) {
+    detailModal.classList.remove('open');
+    const modalContent = detailModal.querySelector('.prod-modal');
+    if (modalContent) {
+      modalContent.style.transform = '';
+      modalContent.style.transition = '';
+    }
+  }
+  if (state.modalHistoryPushed) {
+    state.modalHistoryPushed = false;
+    if (history.state && history.state.modal === 'product-detail') {
+      history.back();
+    }
+  }
+}
+
+// Setup swipe gesture to close bottom sheet modal on mobile
+function setupSwipeToClose() {
+  const detailModal = document.getElementById('product-detail-modal');
+  if (!detailModal) return;
+
+  const modalContent = detailModal.querySelector('.prod-modal');
+  if (!modalContent) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  modalContent.addEventListener('touchstart', (e) => {
+    // Only allow drag if scrolled to top
+    if (modalContent.scrollTop > 0) return;
+    
+    startY = e.touches[0].clientY;
+    isDragging = true;
+    modalContent.style.transition = 'none'; // Disable transition during drag
+  }, { passive: true });
+
+  modalContent.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    
+    const clientY = e.touches[0].clientY;
+    const diffY = clientY - startY;
+
+    // Only allow dragging down (diffY > 0)
+    if (diffY > 0) {
+      modalContent.style.transform = `translateY(${diffY}px)`;
+      currentY = diffY;
+      // Prevent page scrolling behind the modal
+      if (e.cancelable) e.preventDefault();
+    } else {
+      modalContent.style.transform = 'translateY(0)';
+      currentY = 0;
+    }
+  }, { passive: false });
+
+  modalContent.addEventListener('touchend', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    modalContent.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+    
+    if (currentY > 80) {
+      // Swiped down enough -> close the modal
+      closeProductDetails();
+    } else {
+      // Not swiped enough -> bounce back
+      modalContent.style.transform = 'translateY(0)';
+    }
+    currentY = 0;
+  });
+
+  // Handle browser back button to close modal
+  window.addEventListener('popstate', (e) => {
+    if (detailModal.classList.contains('open')) {
+      detailModal.classList.remove('open');
+      modalContent.style.transform = '';
+      modalContent.style.transition = '';
+      state.modalHistoryPushed = false;
+    }
+  });
+
+  // Handle escape key to close modal
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && detailModal.classList.contains('open')) {
+      closeProductDetails();
+    }
+  });
 }
 
