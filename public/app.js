@@ -425,6 +425,21 @@ function renderTestimonials() {
   }).join('');
 }
 
+// Cart drawer open/close — module-level so sticky bar can also call them
+function openCartDrawer() {
+  document.getElementById('cart-drawer').classList.add('open');
+  // Hide the sticky bar so it doesn't cover the Order Now button
+  const stickyBar = document.getElementById('rs-sticky-cart-bar');
+  if (stickyBar) stickyBar.classList.add('drawer-hidden');
+}
+
+function closeCartDrawer() {
+  document.getElementById('cart-drawer').classList.remove('open');
+  // Restore sticky bar if cart still has items
+  const stickyBar = document.getElementById('rs-sticky-cart-bar');
+  if (stickyBar) stickyBar.classList.remove('drawer-hidden');
+}
+
 // --- EVENT LISTENERS setup ---
 function setupEventListeners() {
   
@@ -530,17 +545,14 @@ function setupEventListeners() {
 
   // Cart Drawer opening and closing
   const cartDrawer = document.getElementById('cart-drawer');
-  document.getElementById('cart-toggle-btn').addEventListener('click', () => {
-    cartDrawer.classList.add('open');
-  });
+
+  document.getElementById('cart-toggle-btn').addEventListener('click', openCartDrawer);
   // bottom-cart-btn removed from DOM — cart is only in top header now
-  document.getElementById('cart-close-btn').addEventListener('click', () => {
-    cartDrawer.classList.remove('open');
-  });
+  document.getElementById('cart-close-btn').addEventListener('click', closeCartDrawer);
 
   // Close overlays when clicking background
   cartDrawer.addEventListener('click', (e) => {
-    if (e.target === cartDrawer) cartDrawer.classList.remove('open');
+    if (e.target === cartDrawer) closeCartDrawer();
   });
 
   const detailModal = document.getElementById('product-detail-modal');
@@ -788,29 +800,48 @@ function quickAddToCart(productId) {
   setTimeout(() => cartTrigger.style.transform = 'none', 200);
 }
 
-// Shows a brief toast at the bottom with item name + "Proceed to Cart" CTA
-let toastTimer = null;
-function showAddedToast(productName) {
-  // Reuse existing toast or create it
-  let toast = document.getElementById('rs-added-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'rs-added-toast';
-    toast.innerHTML = `
-      <span id="rs-toast-msg"></span>
-      <button id="rs-toast-cta" onclick="document.getElementById('cart-drawer').classList.add('open'); document.getElementById('rs-added-toast').classList.remove('visible');">
-        Proceed to Cart &rarr;
+// Persistent sticky "Proceed to Buy" bar — shows whenever cart has items
+function updateStickyCartBar() {
+  let bar = document.getElementById('rs-sticky-cart-bar');
+
+  // Create bar if it doesn't exist yet
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'rs-sticky-cart-bar';
+    bar.innerHTML = `
+      <div id="rs-sticky-cart-info">
+        <span id="rs-sticky-cart-count"></span>
+        <span id="rs-sticky-cart-total"></span>
+      </div>
+      <button id="rs-sticky-cart-btn">
+        Proceed to Buy &rarr;
       </button>
     `;
-    document.body.appendChild(toast);
+    document.body.appendChild(bar);
+
+    // Wire up button AFTER appending — calls openCartDrawer() to properly hide the bar
+    document.getElementById('rs-sticky-cart-btn').addEventListener('click', () => {
+      openCartDrawer();
+    });
   }
 
-  document.getElementById('rs-toast-msg').textContent = `\u2713 ${productName} added`;
+  const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  // Reset and show
-  clearTimeout(toastTimer);
-  toast.classList.add('visible');
-  toastTimer = setTimeout(() => toast.classList.remove('visible'), 3500);
+  if (totalItems === 0) {
+    // Hide bar when cart is empty
+    bar.classList.remove('visible');
+  } else {
+    // Update and show
+    document.getElementById('rs-sticky-cart-count').textContent = `${totalItems} item${totalItems > 1 ? 's' : ''} in cart`;
+    document.getElementById('rs-sticky-cart-total').textContent = `\u20b9${totalPrice}`;
+    bar.classList.add('visible');
+  }
+}
+
+// Legacy toast — no longer used (replaced by persistent sticky bar)
+function showAddedToast(productName) {
+  // Kept for reference — now using updateStickyCartBar instead
 }
 
 function addToCart(productId, weight, price, quantity) {
@@ -873,6 +904,9 @@ function updateCartUI() {
     el.innerText = totalItemsCount;
     el.classList.toggle('hide', totalItemsCount === 0);
   });
+
+  // Update the persistent sticky "Proceed to Buy" bar
+  updateStickyCartBar();
 
   const cartList = document.getElementById('cart-items-list');
   const summaryWrap = document.getElementById('cart-summary-wrapper');

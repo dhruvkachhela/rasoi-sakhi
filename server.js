@@ -321,6 +321,16 @@ app.post('/api/admin/orders/:id/status', authenticateAdmin, async (req, res) => 
     const updatedOrder = await db.updateOrderStatus(req.params.id, status);
     if (updatedOrder) {
       res.json({ success: true, order: updatedOrder });
+      
+      // Sync status change to Google Sheets webhook
+      try {
+        const settings = await db.getSettings();
+        if (settings && settings.googleSheetsWebhookUrl) {
+          triggerGoogleSheetsWebhook(settings.googleSheetsWebhookUrl, updatedOrder);
+        }
+      } catch (webhookErr) {
+        console.error("Error triggering Google Sheets webhook on status change:", webhookErr);
+      }
     } else {
       res.status(404).json({ error: "Order not found." });
     }

@@ -2206,57 +2206,90 @@ button, input, select, textarea {
   }
 }
 
-/* --- ADDED-TO-CART TOAST NOTIFICATION --- */
-#rs-added-toast {
+/* --- PERSISTENT STICKY "PROCEED TO BUY" BAR --- */
+#rs-sticky-cart-bar {
   position: fixed;
-  bottom: calc(var(--bottom-nav-height) + 12px);
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background-color: var(--color-text-dark);
-  color: var(--color-text-light);
+  bottom: calc(var(--bottom-nav-height, 64px));  /* sits just above the bottom nav */
+  left: 0;
+  right: 0;
+  background: var(--color-text-dark);
+  color: white;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  border-radius: 0px;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-  z-index: 9999;
+  justify-content: space-between;
+  padding: 12px 18px;
+  z-index: 9990;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  transform: translateY(100%);
+  transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
 }
 
-#rs-added-toast.visible {
+#rs-sticky-cart-bar.visible {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
   pointer-events: all;
 }
 
-#rs-toast-msg {
-  color: var(--color-text-light);
-  letter-spacing: 0.01em;
+/* Hidden when cart drawer is open — avoids covering the Order Now button */
+#rs-sticky-cart-bar.drawer-hidden {
+  opacity: 0 !important;
+  transform: translateY(100%) !important;
+  pointer-events: none !important;
 }
 
-#rs-toast-cta {
-  background-color: var(--color-accent);
+#rs-sticky-cart-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#rs-sticky-cart-count {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.65);
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+#rs-sticky-cart-total {
+  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: white;
+}
+
+#rs-sticky-cart-btn {
+  background-color: var(--color-primary);
   color: white;
   border: none;
-  padding: 7px 14px;
+  padding: 10px 20px;
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   cursor: pointer;
   border-radius: 0px;
   transition: var(--transition-smooth);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-#rs-toast-cta:hover {
+#rs-sticky-cart-btn:hover {
   background-color: var(--color-primary-dark);
+  transform: scale(1.02);
+}
+
+/* On desktop: bar sits at the very bottom (no bottom nav) */
+@media (min-width: 768px) {
+  #rs-sticky-cart-bar {
+    bottom: 0;
+    max-width: 480px;
+    right: 24px;
+    left: auto;
+    border-radius: 0px;
+    box-shadow: 0 -2px 20px rgba(0,0,0,0.18);
+  }
 }
