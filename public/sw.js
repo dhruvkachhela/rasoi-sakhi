@@ -14,8 +14,8 @@ self.addEventListener('push', function(event) {
 
   var title = data.title || 'Rasoi Sakhi';
   var body = data.body || 'You have a new notification!';
-  var icon = '/assets/logo.jpg';
-  var badge = '/assets/logo.jpg';
+  var icon = self.location.origin + '/assets/logo.jpg';
+  var badge = self.location.origin + '/assets/logo.jpg';
   var tag = data.tag || 'rasoi-sakhi-notification';
   var openUrl = data.url || '/#admin-section';
 

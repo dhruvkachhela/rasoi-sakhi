@@ -1661,7 +1661,7 @@ function renderAdminOrdersTable() {
           <span style="font-size: 0.75rem; color: var(--color-text-muted);">${o.customerEmail || 'No Email'}</span>
         </td>
         <td style="font-size: 0.8rem;">${itemsList}</td>
-        <td>
+        <td style="min-width: 115px; white-space: nowrap; line-height: 1.5;">
           <strong>₹${o.totalAmount}</strong><br>
           <span style="font-size: 0.75rem; color: var(--color-text-muted);">Sub: ₹${o.subtotal}</span><br>
           ${paymentBadge}
