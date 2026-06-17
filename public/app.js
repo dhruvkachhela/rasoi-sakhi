@@ -1607,7 +1607,7 @@ function renderAdminOrdersTable() {
     const itemsList = o.items.map(item => `• ${item.name} (${item.weight} x ${item.quantity})`).join('<br>');
     
     // Dropdown for status update
-    const statuses = ["Pending", "Processing", "Out for Delivery", "Delivered", "Cancelled"];
+    const statuses = ["Pending", "Payment Received", "Processing", "Out for Delivery", "Delivered", "Cancelled"];
     const statusSelect = `
       <select onchange="updateOrderStatus('${o.id}', this.value)" style="border: 1px solid var(--color-border-soft); padding: 4px; border-radius: 4px;">
         ${statuses.map(st => `<option value="${st}" ${o.status === st ? 'selected' : ''}>${st}</option>`).join('')}
@@ -1629,6 +1629,18 @@ function renderAdminOrdersTable() {
       </div>
     `;
 
+    // Dynamic Payment Method Badge
+    const payMethod = o.paymentMethod || 'Cash On Delivery';
+    const isUPI = payMethod.toLowerCase().includes('upi');
+    const payBadgeColor = isUPI 
+      ? 'background-color: #ede7f6; color: #5e35b1; border: 1px solid #d1c4e9;' 
+      : 'background-color: #efebe9; color: #4e342e; border: 1px solid #d7ccc8;';
+    const paymentBadge = `
+      <span class="payment-method-badge" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; ${payBadgeColor}">
+        ${isUPI ? 'UPI' : 'COD'}
+      </span>
+    `;
+
     return `
       <tr>
         <td>
@@ -1644,7 +1656,11 @@ function renderAdminOrdersTable() {
           <span style="font-size: 0.75rem; color: var(--color-text-muted);">${o.customerEmail || 'No Email'}</span>
         </td>
         <td style="font-size: 0.8rem;">${itemsList}</td>
-        <td><strong>₹${o.totalAmount}</strong><br><span style="font-size: 0.75rem; color: var(--color-text-muted);">Sub: ₹${o.subtotal}</span></td>
+        <td>
+          <strong>₹${o.totalAmount}</strong><br>
+          <span style="font-size: 0.75rem; color: var(--color-text-muted);">Sub: ₹${o.subtotal}</span><br>
+          ${paymentBadge}
+        </td>
         <td>
           <span style="font-size: 0.8rem;">Slot: ${o.deliverySlot}</span><br>
           <span style="font-size: 0.75rem; color: var(--color-text-muted);">Address: ${o.deliveryAddress} (${o.landmark || 'N/A'})</span>
