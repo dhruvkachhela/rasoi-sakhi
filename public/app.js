@@ -645,6 +645,16 @@ function setupEventListeners() {
     });
   }
 
+  // Save form details dynamically as the user types
+  const formFields = ['cust-name', 'cust-phone', 'cust-email', 'cust-address', 'cust-landmark', 'cust-slot', 'cust-payment'];
+  formFields.forEach(fieldId => {
+    const el = document.getElementById(fieldId);
+    if (el) {
+      el.addEventListener('input', saveFormDetailsToLocalStorage);
+      el.addEventListener('change', saveFormDetailsToLocalStorage);
+    }
+  });
+
   // Setup admin panel controls
   setupAdminListeners();
 }
@@ -2047,9 +2057,29 @@ function prefillCheckoutForm() {
     if (details.email) document.getElementById('cust-email').value = details.email;
     if (details.address) document.getElementById('cust-address').value = details.address;
     if (details.landmark) document.getElementById('cust-landmark').value = details.landmark;
+    if (details.slot) document.getElementById('cust-slot').value = details.slot;
+    if (details.payment) {
+      document.getElementById('cust-payment').value = details.payment;
+      // Trigger change event to update UPI helper visibility
+      document.getElementById('cust-payment').dispatchEvent(new Event('change'));
+    }
   } catch (err) {
     console.error("Error prefilling checkout details:", err);
   }
+}
+
+// Saves checkout form details to localStorage on input/change
+function saveFormDetailsToLocalStorage() {
+  const customerDetails = {
+    name: document.getElementById('cust-name')?.value || "",
+    phone: document.getElementById('cust-phone')?.value || "",
+    email: document.getElementById('cust-email')?.value || "",
+    address: document.getElementById('cust-address')?.value || "",
+    landmark: document.getElementById('cust-landmark')?.value || "",
+    slot: document.getElementById('cust-slot')?.value || "",
+    payment: document.getElementById('cust-payment')?.value || ""
+  };
+  localStorage.setItem('rs_customer_details', JSON.stringify(customerDetails));
 }
 
 // Close details modal and pop history state if pushed
