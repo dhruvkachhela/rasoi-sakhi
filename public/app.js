@@ -691,6 +691,9 @@ function switchView(targetId) {
   if (targetId === 'admin-section' && state.adminToken) {
     loadAdminDashboard();
   }
+
+  // Update sticky cart bar visibility based on active page
+  updateStickyCartBar();
 }
 
 function handleHashRoute() {
@@ -858,8 +861,11 @@ function updateStickyCartBar() {
   const totalItems = state.cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  if (totalItems === 0) {
-    // Hide bar when cart is empty
+  const homeSec = document.getElementById('home-section');
+  const isHome = homeSec ? (homeSec.classList.contains('active') || homeSec.style.display === 'block') : true;
+
+  if (totalItems === 0 || !isHome) {
+    // Hide bar when cart is empty or not on home page
     bar.classList.remove('visible');
   } else {
     // Update and show
