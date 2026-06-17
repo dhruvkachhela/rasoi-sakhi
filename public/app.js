@@ -633,6 +633,20 @@ function setupEventListeners() {
     });
   }
 
+  // Header contact button — on desktop navigate to Contact section; on mobile it dials directly
+  const headerContactBtn = document.getElementById('header-contact-btn');
+  if (headerContactBtn) {
+    headerContactBtn.addEventListener('click', (e) => {
+      // On non-touch / desktop devices, navigate to contact section instead of dialing
+      const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      if (isDesktop) {
+        e.preventDefault();
+        window.location.hash = '#contact';
+      }
+      // On mobile/touch: allow default tel: behavior (opens dialer)
+    });
+  }
+
   // Contact form submission
   const contactForm = document.getElementById('contact-us-form');
   if (contactForm) {
