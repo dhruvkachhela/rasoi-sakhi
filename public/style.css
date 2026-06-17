@@ -201,7 +201,6 @@ button, input, select, textarea {
   color: var(--color-primary);
   background-color: var(--color-primary-light);
   transition: var(--transition-smooth);
-  animation: contact-pulse 2.5s ease-in-out infinite;
 }
 
 .header-contact-btn:hover,
@@ -209,12 +208,6 @@ button, input, select, textarea {
   background-color: var(--color-primary);
   color: white;
   transform: scale(1.1);
-  animation: none;
-}
-
-@keyframes contact-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.25); }
-  50% { box-shadow: 0 0 0 6px rgba(46, 125, 50, 0); }
 }
 
 /* The popup card */
