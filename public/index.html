@@ -12,8 +12,8 @@
   <link rel="icon" type="image/jpeg" href="/assets/logo.jpg">
   <link rel="apple-touch-icon" href="/assets/logo.jpg">
   <link rel="stylesheet" href="style.css">
-  <!-- Razorpay Checkout SDK DISABLED — client uses QR Code / UPI -->
-  <!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -902,7 +902,10 @@ function doPost(e) {
             </div>
             <div class="form-group">
               <label for="cust-phone">WhatsApp/Phone Number</label>
-              <input type="tel" id="cust-phone" placeholder="Enter mobile number" required>
+              <div class="phone-input-wrapper">
+                <span class="phone-input-prefix">+91</span>
+                <input type="tel" id="cust-phone" placeholder="9876543210" required pattern="[6-9][0-9]{9}" maxlength="10" title="Please enter a valid 10-digit Indian mobile number">
+              </div>
             </div>
             <div class="form-group">
               <label for="cust-email">Email Address (Optional)</label>
@@ -912,31 +915,38 @@ function doPost(e) {
               <label for="cust-address">Delivery Address (in Bharuch)</label>
               <textarea id="cust-address" rows="2" placeholder="House/Flat No, Apartment, Street" required></textarea>
             </div>
-            <div class="form-group">
-              <label for="cust-landmark">Landmark (Optional)</label>
-              <input type="text" id="cust-landmark" placeholder="e.g. Near Station, Beside Temple">
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cust-landmark">Landmark (Optional)</label>
+                <input type="text" id="cust-landmark" placeholder="e.g. Near Station, Beside Temple">
+              </div>
+              <div class="form-group">
+                <label for="cust-pincode">Pincode (Delivery only to 392011)</label>
+                <input type="text" id="cust-pincode" placeholder="392011" value="392011" required pattern="392011" title="Delivery is only available for pincode 392011">
+              </div>
             </div>
             
             <div class="form-row">
               <div class="form-group">
                 <label for="cust-slot">Delivery Slot</label>
                 <select id="cust-slot" required>
-                  <option value="Morning (8 AM - 11 AM)">Morning (8 AM - 11 AM)</option>
-                  <option value="Afternoon (1 PM - 4 PM)">Afternoon (1 PM - 4 PM)</option>
-                  <option value="Evening (5 PM - 8 PM)">Evening (5 PM - 8 PM)</option>
+                  <option value="Morning (6:00 AM - 7:30 AM)">Morning (6:00 AM - 7:30 AM)</option>
+                  <option value="Afternoon (11:00 AM - 12:30 PM)">Afternoon (11:00 AM - 12:30 PM)</option>
+                  <option value="Evening (5:00 PM - 6:30 PM)">Evening (5:00 PM - 6:30 PM)</option>
                 </select>
               </div>
               <div class="form-group">
                 <label for="cust-payment">Payment Option</label>
                 <select id="cust-payment" required>
                   <option value="Cash On Delivery">Cash On Delivery</option>
-                  <option value="UPI Payment">UPI Payment (QR Scan)</option>
+                  <option value="UPI Payment">UPI Payment (Razorpay)</option>
                 </select>
               </div>
             </div>
 
             <div id="checkout-upi-helper" class="upi-instructions hide">
-              <p>UPI payments will be completed via dynamic QR code or contact transfer upon delivery.</p>
+              <p>Secure online payment via UPI, Credit/Debit Cards, or NetBanking powered by Razorpay.</p>
             </div>
 
             <button type="submit" class="btn btn-primary w-100 checkout-btn">

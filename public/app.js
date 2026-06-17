@@ -1002,6 +1002,77 @@ window.updateCartQty = updateCartQty;
 window.removeCartItem = removeCartItem;
 
 // --- CHECKOUT & ORDER REDIRECTION ---
+function openWhatsApp(url) {
+  // Strategy 1: Standard new tab (works on most desktop & Android Chrome)
+  const newTab = window.open(url, '_blank', 'noopener,noreferrer');
+  if (newTab) {
+    try { newTab.focus(); } catch (_) {}
+    return;
+  }
+  // Strategy 2: Direct location replace (works when popups are blocked)
+  // Slight delay so the order confirmation alert has time to close first.
+  setTimeout(() => {
+    try {
+      window.location.href = url;
+      return;
+    } catch (_) {}
+    // Strategy 3: Invisible <a> click (last resort — works in restrictive WebViews)
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 500);
+    } catch (err) {
+      console.error('WhatsApp redirect failed on all strategies:', err);
+    }
+  }, 300);
+}
+
+function completeCheckoutFlow(formElement, customerDetails, whatsappUrl) {
+  // Save customer details in localStorage for autofill next time
+  localStorage.setItem('rs_customer_details', JSON.stringify(customerDetails));
+
+  // Clear cart
+  state.cart = [];
+  saveCart();
+  updateCartUI();
+
+  // Close Cart Drawer
+  const cartDrawer = document.getElementById('cart-drawer');
+  if (cartDrawer) {
+    cartDrawer.classList.remove('open');
+  }
+
+  // Reset form but immediately prefill the saved details back
+  if (formElement) formElement.reset();
+  prefillCheckoutForm();
+
+  // Show confirmation then redirect to WhatsApp
+  alert("Order placed successfully!\nWe are now redirecting you to WhatsApp to confirm your slot.");
+  openWhatsApp(whatsappUrl);
+}
+
+async function pollPaymentVerification(orderId, maxAttempts = 5, delay = 1000) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const res = await fetch(`${API_BASE}/orders/${orderId}/verify-payment`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.verified) {
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn("Polling attempt failed:", err);
+    }
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  return false;
+}
+
 async function handleCheckoutSubmit(e) {
   e.preventDefault();
 
@@ -1011,12 +1082,29 @@ async function handleCheckoutSubmit(e) {
   checkoutBtn.disabled = true;
   checkoutBtn.innerText = "Creating secure order...";
 
+  const pincode = document.getElementById('cust-pincode').value.trim();
+  if (pincode !== '392011') {
+    alert("Sorry, we only deliver to pincode 392011.");
+    checkoutBtn.disabled = false;
+    checkoutBtn.innerText = "Order Now via WhatsApp & Excel";
+    return;
+  }
+
+  const rawPhone = document.getElementById('cust-phone').value.replace(/[^0-9]/g, '');
+  if (rawPhone.length !== 10) {
+    alert("Please enter a valid 10-digit Indian mobile number.");
+    checkoutBtn.disabled = false;
+    checkoutBtn.innerText = "Order Now via WhatsApp & Excel";
+    return;
+  }
+
   // Collect user info
   const orderPayload = {
     customerName: document.getElementById('cust-name').value,
-    customerPhone: document.getElementById('cust-phone').value,
+    customerPhone: '91' + rawPhone,
     customerEmail: document.getElementById('cust-email').value,
     deliveryAddress: document.getElementById('cust-address').value,
+    deliveryPincode: pincode,
     landmark: document.getElementById('cust-landmark').value,
     deliverySlot: document.getElementById('cust-slot').value,
     paymentMethod: document.getElementById('cust-payment').value,
@@ -1026,39 +1114,6 @@ async function handleCheckoutSubmit(e) {
       quantity: item.quantity
     }))
   };
-
-  /**
-   * Hardened WhatsApp redirect — tries three strategies so it works on
-   * every browser, mobile, and privacy-restricted environment.
-   */
-  function openWhatsApp(url) {
-    // Strategy 1: Standard new tab (works on most desktop & Android Chrome)
-    const newTab = window.open(url, '_blank', 'noopener,noreferrer');
-    if (newTab) {
-      try { newTab.focus(); } catch (_) {}
-      return;
-    }
-    // Strategy 2: Direct location replace (works when popups are blocked)
-    // Slight delay so the order confirmation alert has time to close first.
-    setTimeout(() => {
-      try {
-        window.location.href = url;
-        return;
-      } catch (_) {}
-      // Strategy 3: Invisible <a> click (last resort — works in restrictive WebViews)
-      try {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => document.body.removeChild(a), 500);
-      } catch (err) {
-        console.error('WhatsApp redirect failed on all strategies:', err);
-      }
-    }, 300);
-  }
 
   try {
     const res = await fetch(`${API_BASE}/orders`, {
@@ -1072,7 +1127,6 @@ async function handleCheckoutSubmit(e) {
     const responseData = await res.json();
 
     if (responseData.success) {
-      // Save customer details in localStorage for autofill next time
       const customerDetails = {
         name: orderPayload.customerName,
         phone: orderPayload.customerPhone,
@@ -1080,53 +1134,44 @@ async function handleCheckoutSubmit(e) {
         address: orderPayload.deliveryAddress,
         landmark: orderPayload.landmark
       };
-      localStorage.setItem('rs_customer_details', JSON.stringify(customerDetails));
 
-      // Clear cart
-      state.cart = [];
-      saveCart();
-      updateCartUI();
-
-      // Close Cart Drawer
-      document.getElementById('cart-drawer').classList.remove('open');
-
-      // Reset form but immediately prefill the saved details back
-      e.target.reset();
-      prefillCheckoutForm();
-
-      // Show confirmation then redirect to WhatsApp
-      alert("Order placed successfully!\nWe are now redirecting you to WhatsApp to confirm your slot.");
-      openWhatsApp(responseData.whatsappUrl);
-
-      // -----------------------------------------------------------------
-      // RAZORPAY ONLINE PAYMENT — COMMENTED OUT
-      // Client now uses their own QR Code / UPI. To re-enable, uncomment:
-      // -----------------------------------------------------------------
-      // if (responseData.paymentRequired) {
-      //   checkoutBtn.innerText = "Awaiting payment...";
-      //   const options = {
-      //     key: responseData.keyId,
-      //     amount: responseData.amount,
-      //     currency: responseData.currency,
-      //     name: "Rasoi Sakhi",
-      //     description: "Vegetables Order Payment",
-      //     order_id: responseData.razorpayOrderId,
-      //     prefill: { name: orderPayload.customerName, contact: orderPayload.customerPhone, email: orderPayload.customerEmail },
-      //     theme: { color: "#4CAF50" },
-      //     handler: async function (response) {
-      //       checkoutBtn.innerText = "Verifying payment...";
-      //       const verifyRes = await fetch(`${API_BASE}/orders/${responseData.orderId}/verify-payment`);
-      //       const verifyData = await verifyRes.json();
-      //       finalizeOrder(e.target, responseData.whatsappUrl);
-      //     },
-      //     modal: { ondismiss: function () { checkoutBtn.disabled = false; checkoutBtn.innerText = "Order Now via WhatsApp & Excel"; } }
-      //   };
-      //   const rzp1 = new Razorpay(options);
-      //   rzp1.open();
-      // } else {
-      //   finalizeOrder(e.target, responseData.whatsappUrl);
-      // }
-      // -----------------------------------------------------------------
+      if (responseData.paymentRequired) {
+        checkoutBtn.innerText = "Awaiting payment...";
+        const options = {
+          key: responseData.keyId,
+          amount: responseData.amount,
+          currency: responseData.currency,
+          name: "Rasoi Sakhi",
+          description: "Vegetables Order Payment",
+          order_id: responseData.razorpayOrderId,
+          prefill: { 
+            name: orderPayload.customerName, 
+            contact: orderPayload.customerPhone, 
+            email: orderPayload.customerEmail 
+          },
+          theme: { color: "#2e7d32" },
+           handler: async function (response) {
+            checkoutBtn.innerText = "Verifying payment...";
+            const isVerified = await pollPaymentVerification(responseData.orderId);
+            if (isVerified) {
+              completeCheckoutFlow(e.target, customerDetails, responseData.whatsappUrl);
+            } else {
+              alert("Payment confirmation received. Proceeding to WhatsApp to complete your slot booking.");
+              completeCheckoutFlow(e.target, customerDetails, responseData.whatsappUrl);
+            }
+          },
+          modal: { 
+            ondismiss: function () { 
+              checkoutBtn.disabled = false; 
+              checkoutBtn.innerText = "Order Now via WhatsApp & Excel"; 
+            } 
+          }
+        };
+        const rzp1 = new Razorpay(options);
+        rzp1.open();
+      } else {
+        completeCheckoutFlow(e.target, customerDetails, responseData.whatsappUrl);
+      }
     }
   } catch (err) {
     console.error("Order processing error:", err);
@@ -1955,13 +2000,21 @@ async function handleProductSaveSubmit(e) {
 
 // Prefills checkout form with customer details from localStorage if present
 function prefillCheckoutForm() {
+  const pinInput = document.getElementById('cust-pincode');
+  if (pinInput) {
+    pinInput.value = '392011';
+  }
+
   const detailsJson = localStorage.getItem('rs_customer_details');
   if (!detailsJson) return;
 
   try {
     const details = JSON.parse(detailsJson);
     if (details.name) document.getElementById('cust-name').value = details.name;
-    if (details.phone) document.getElementById('cust-phone').value = details.phone;
+    if (details.phone) {
+      const cleanedPhone = details.phone.replace(/[^0-9]/g, '').slice(-10);
+      document.getElementById('cust-phone').value = cleanedPhone;
+    }
     if (details.email) document.getElementById('cust-email').value = details.email;
     if (details.address) document.getElementById('cust-address').value = details.address;
     if (details.landmark) document.getElementById('cust-landmark').value = details.landmark;

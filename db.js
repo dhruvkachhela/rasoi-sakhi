@@ -511,7 +511,11 @@ module.exports = {
 
   addOrder: async (order) => {
     if (useSupabase) {
-      const { error } = await supabase.from('orders').insert(order);
+      const { deliveryPincode, ...supabaseOrder } = order;
+      if (deliveryPincode && !supabaseOrder.deliveryAddress.includes(deliveryPincode)) {
+        supabaseOrder.deliveryAddress = `${supabaseOrder.deliveryAddress} - ${deliveryPincode}`;
+      }
+      const { error } = await supabase.from('orders').insert(supabaseOrder);
       if (error) {
         console.error("Supabase error adding order:", error);
         return null;
@@ -572,7 +576,6 @@ module.exports = {
     }
   },
 
-  /*
   savePaymentMapping: async (razorpayOrderId, orderId, extraData = {}) => {
     const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
     const filePath = isVercel ? path.join('/tmp', 'payment_mappings.json') : path.join(__dirname, 'data', 'payment_mappings.json');
@@ -648,7 +651,6 @@ module.exports = {
     const rzpOrderId = Object.keys(inMemoryPaymentMappings).find(key => inMemoryPaymentMappings[key].orderId === orderId);
     return rzpOrderId ? inMemoryPaymentMappings[rzpOrderId] : null;
   },
-  */
 
   uploadProductImage: async (filename, buffer, mimeType) => {
     if (useSupabase) {
