@@ -1251,8 +1251,8 @@ button, input, select, textarea {
 
 /* --- INLINE SHOP SECTION (shop on landing page) --- */
 .inline-shop-section {
-  padding: var(--spacing-xl) 0;
-  background: var(--color-bg);
+  padding: var(--spacing-sm) 0 var(--spacing-xl);
+  background: var(--color-bg-pure);
 }
 
 .shop-controls {

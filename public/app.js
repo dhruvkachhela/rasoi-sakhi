@@ -452,6 +452,7 @@ function renderTestimonials() {
 
 // Cart drawer open/close — module-level so sticky bar can also call them
 function openCartDrawer() {
+  populateDeliverySlots();
   document.getElementById('cart-drawer').classList.add('open');
   // Hide the sticky bar so it doesn't cover the Order Now button
   const stickyBar = document.getElementById('rs-sticky-cart-bar');
@@ -2416,8 +2417,80 @@ async function handleProductSaveSubmit(e) {
   }
 }
 
+// Dynamically populate delivery slots based on client's cut-off policies:
+// - Morning delivery starts at 6:00 AM and must be ordered the previous night (before 12:00 AM of the day).
+// - Afternoon delivery starts at 11:00 AM and must be ordered at least 1 hour in advance (before 10:00 AM of the day).
+// - Evening delivery starts at 5:00 PM and must be ordered at least 1 hour in advance (before 4:00 PM of the day).
+function populateDeliverySlots() {
+  const slotSelect = document.getElementById('cust-slot');
+  if (!slotSelect) return;
+
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  // Create list of options
+  const options = [];
+
+  // 1. Afternoon Slot (Today): Eligible if ordered before 10:00 AM today
+  if (currentHour < 10) {
+    options.push({
+      value: "Afternoon (Today, 11:00 AM - 12:30 PM)",
+      text: "Afternoon (Today, 11:00 AM - 12:30 PM)"
+    });
+  }
+
+  // 2. Evening Slot (Today): Eligible if ordered before 4:00 PM today
+  if (currentHour < 16) {
+    options.push({
+      value: "Evening (Today, 5:00 PM - 6:30 PM)",
+      text: "Evening (Today, 5:00 PM - 6:30 PM)"
+    });
+  }
+
+  // 3. Morning Slot (Tomorrow): Always eligible (since placing it today is "previous night" relative to tomorrow morning)
+  options.push({
+    value: "Morning (Tomorrow, 6:00 AM - 7:30 AM)",
+    text: "Morning (Tomorrow, 6:00 AM - 7:30 AM)"
+  });
+
+  // 4. Afternoon Slot (Tomorrow): Always eligible
+  options.push({
+    value: "Afternoon (Tomorrow, 11:00 AM - 12:30 PM)",
+    text: "Afternoon (Tomorrow, 11:00 AM - 12:30 PM)"
+  });
+
+  // 5. Evening Slot (Tomorrow): Always eligible
+  options.push({
+    value: "Evening (Tomorrow, 5:00 PM - 6:30 PM)",
+    text: "Evening (Tomorrow, 5:00 PM - 6:30 PM)"
+  });
+
+  // Save current selection value if any
+  const previousValue = slotSelect.value;
+
+  // Clear dropdown options
+  slotSelect.innerHTML = '';
+
+  // Append new options
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.text;
+    slotSelect.appendChild(el);
+  });
+
+  // Try to restore previous selection if it is still one of the options
+  if (previousValue) {
+    const exists = Array.from(slotSelect.options).some(o => o.value === previousValue);
+    if (exists) {
+      slotSelect.value = previousValue;
+    }
+  }
+}
+
 // Prefills checkout form with customer details from localStorage if present
 function prefillCheckoutForm() {
+  populateDeliverySlots();
   const pinInput = document.getElementById('cust-pincode');
   if (pinInput) {
     pinInput.value = '392011';
@@ -2436,7 +2509,22 @@ function prefillCheckoutForm() {
     if (details.email) document.getElementById('cust-email').value = details.email;
     if (details.address) document.getElementById('cust-address').value = details.address;
     if (details.landmark) document.getElementById('cust-landmark').value = details.landmark;
-    if (details.slot) document.getElementById('cust-slot').value = details.slot;
+    
+    // Select stored slot if valid, otherwise fallback to matching slot type
+    if (details.slot) {
+      const slotSelect = document.getElementById('cust-slot');
+      const exists = Array.from(slotSelect.options).some(o => o.value === details.slot);
+      if (exists) {
+        slotSelect.value = details.slot;
+      } else {
+        const type = details.slot.split(' ')[0]; // "Morning", "Afternoon", or "Evening"
+        const matchedOpt = Array.from(slotSelect.options).find(o => o.value.startsWith(type));
+        if (matchedOpt) {
+          slotSelect.value = matchedOpt.value;
+        }
+      }
+    }
+
     if (details.payment) {
       document.getElementById('cust-payment').value = details.payment;
       // Trigger change event to update UPI helper visibility
