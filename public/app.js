@@ -17,6 +17,7 @@ let state = {
   selectedQty: 1,
   adminToken: localStorage.getItem('rs_admin_token') || null,
   adminSettings: null,
+  publicSettings: null,
   knownOrderIds: new Set(),
   hasInitiallyLoadedOrders: false,
   modalHistoryPushed: false,
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
+  fetchPublicSettings();
   fetchProducts();
   fetchTestimonials();
   setupEventListeners();
@@ -51,6 +53,18 @@ function initApp() {
 }
 
 // --- NETWORK CALLS ---
+async function fetchPublicSettings() {
+  try {
+    const res = await fetch(`${API_BASE}/settings`);
+    if (res.ok) {
+      state.publicSettings = await res.json();
+      updateCartUI(); // Refresh cart UI with backend rates
+    }
+  } catch (err) {
+    console.error("Error fetching public settings:", err);
+  }
+}
+
 async function fetchProducts() {
   try {
     const res = await fetch(`${API_BASE}/products`);
@@ -1073,8 +1087,11 @@ function updateCartUI() {
   // Calculate pricing totals
   const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Set defaults (overwritten if admin configs load, but fallback is standard)
-  const deliveryCharge = subtotal >= 299 ? 0 : 30;
+  // Dynamic pricing settings (loaded from backend configs)
+  const threshold = state.publicSettings ? Number(state.publicSettings.freeDeliveryThreshold) : 299;
+  const charge = state.publicSettings ? Number(state.publicSettings.deliveryCharge) : 30;
+  
+  const deliveryCharge = subtotal >= threshold ? 0 : charge;
   const grandTotal = subtotal + deliveryCharge;
 
   document.getElementById('summary-subtotal').innerText = `₹${subtotal}`;
@@ -1082,12 +1099,12 @@ function updateCartUI() {
   document.getElementById('summary-total').innerText = `₹${grandTotal}`;
 
   const freeBadge = document.getElementById('free-delivery-badge');
-  if (subtotal >= 299) {
+  if (subtotal >= threshold) {
     freeBadge.innerText = 'You qualify for Free Delivery.';
     freeBadge.style.backgroundColor = 'var(--color-primary-light)';
     freeBadge.style.color = 'var(--color-primary)';
   } else {
-    const remaining = 299 - subtotal;
+    const remaining = threshold - subtotal;
     freeBadge.innerText = `Add ₹${remaining} more for Free Delivery`;
     freeBadge.style.backgroundColor = 'var(--color-accent-light)';
     freeBadge.style.color = 'var(--color-accent)';
@@ -1198,8 +1215,11 @@ async function handleCheckoutSubmit(e) {
   checkoutBtn.innerText = "Creating secure order...";
 
   const pincode = document.getElementById('cust-pincode').value.trim();
-  if (pincode !== '392011') {
-    alert("Sorry, we only deliver to pincode 392011.");
+  const allowedList = state.publicSettings && state.publicSettings.allowedPincodes 
+    ? state.publicSettings.allowedPincodes.split(',').map(p => p.trim()) 
+    : ['392011'];
+  if (!allowedList.includes(pincode)) {
+    alert(`Sorry, delivery is only available for pincodes: ${allowedList.join(', ')}.`);
     checkoutBtn.disabled = false;
     checkoutBtn.innerText = "Order Now via WhatsApp & Excel";
     return;
@@ -1403,14 +1423,21 @@ function showNewOrderToast(order) {
 
 let adminPollInterval = null;
 
+// Instantly refresh orders when the tab is focused by the admin
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.adminToken) {
+    loadAdminOrders();
+  }
+});
+
 function startAdminPolling() {
   stopAdminPolling();
-  // Poll every 10 seconds for real-time responsiveness
+  // Poll every 20 seconds only if the tab is currently in focus (active)
   adminPollInterval = setInterval(() => {
-    if (state.adminToken) {
+    if (state.adminToken && document.visibilityState !== 'hidden') {
       loadAdminOrders();
     }
-  }, 10000);
+  }, 20000);
 }
 
 function stopAdminPolling() {
@@ -1668,6 +1695,7 @@ function populateSettingsForm() {
   document.getElementById('settings-whatsapp').value = state.adminSettings.whatsappNumber || '';
   document.getElementById('settings-delivery-fee').value = state.adminSettings.deliveryCharge || 0;
   document.getElementById('settings-free-delivery').value = state.adminSettings.freeDeliveryThreshold || 0;
+  document.getElementById('settings-pincodes').value = state.adminSettings.allowedPincodes || '392011';
 }
 
 async function saveAdminSettings(e) {
@@ -1677,11 +1705,29 @@ async function saveAdminSettings(e) {
   statusEl.className = 'form-status';
   statusEl.innerText = 'Saving...';
 
+  const whatsappNumber = document.getElementById('settings-whatsapp').value.trim();
+  const allowedPincodes = document.getElementById('settings-pincodes').value.trim();
+
+  // Validate WhatsApp phone number (must be 10-14 digits only)
+  if (!/^\d{10,14}$/.test(whatsappNumber)) {
+    statusEl.className = 'form-status error';
+    statusEl.innerText = 'WhatsApp contact must be 10-14 digits only (including country code, e.g. 919099113823).';
+    return;
+  }
+
+  // Validate allowed pincodes format (comma-separated list of 6-digit codes)
+  if (!/^\d{6}(?:\s*,\s*\d{6})*$/.test(allowedPincodes)) {
+    statusEl.className = 'form-status error';
+    statusEl.innerText = 'Allowed pincodes must be a comma-separated list of 6-digit numbers (e.g. 392011, 392012).';
+    return;
+  }
+
   const payload = {
     googleSheetsWebhookUrl: document.getElementById('settings-webhook').value,
-    whatsappNumber: document.getElementById('settings-whatsapp').value,
+    whatsappNumber,
     deliveryCharge: document.getElementById('settings-delivery-fee').value,
-    freeDeliveryThreshold: document.getElementById('settings-free-delivery').value
+    freeDeliveryThreshold: document.getElementById('settings-free-delivery').value,
+    allowedPincodes
   };
 
   try {
@@ -1697,11 +1743,13 @@ async function saveAdminSettings(e) {
     if (res.ok) {
       statusEl.className = 'form-status success';
       statusEl.innerText = 'Settings saved successfully!';
-      // Reload products catalog in case delivery configurations updated values
+      // Reload products catalog and public configuration values
       fetchProducts();
+      fetchPublicSettings();
     } else {
+      const errData = await res.json().catch(() => ({}));
       statusEl.className = 'form-status error';
-      statusEl.innerText = 'Failed to save settings.';
+      statusEl.innerText = errData.error || 'Failed to save settings.';
     }
   } catch (err) {
     statusEl.className = 'form-status error';

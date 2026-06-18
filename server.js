@@ -239,6 +239,22 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+// Get Public Configurations
+app.get('/api/settings', async (req, res) => {
+  try {
+    const settings = await db.getSettings();
+    res.json({
+      whatsappNumber: settings.whatsappNumber || "919876543210",
+      deliveryCharge: Number(settings.deliveryCharge) || 0,
+      freeDeliveryThreshold: Number(settings.freeDeliveryThreshold) || 0,
+      allowedPincodes: settings.allowedPincodes || "392011"
+    });
+  } catch (err) {
+    console.error("Error fetching public settings:", err);
+    res.status(500).json({ error: "Could not fetch system settings." });
+  }
+});
+
 // Get Testimonials
 app.get('/api/testimonials', async (req, res) => {
   try {
@@ -269,12 +285,15 @@ app.post('/api/orders', orderLimiter, async (req, res) => {
     return res.status(400).json({ error: "Missing required order details." });
   }
 
-  if (deliveryPincode.trim() !== '392011') {
-    return res.status(400).json({ error: "Delivery is only available for pincode 392011." });
-  }
-
   try {
     const settings = await db.getSettings();
+
+    // Verify allowed pincodes dynamically from database settings configuration
+    const allowed = (settings.allowedPincodes || "392011").split(',').map(p => p.trim());
+    if (!allowed.includes(deliveryPincode.trim())) {
+      return res.status(400).json({ error: `Sorry, delivery is only available for pincodes: ${settings.allowedPincodes || "392011"}.` });
+    }
+
     const products = await db.getCollection('products');
 
     // Verify and calculate order prices based on current database configurations (Backend source of truth)
@@ -698,14 +717,27 @@ app.get('/api/admin/settings', authenticateAdmin, async (req, res) => {
 
 // Update Admin Settings
 app.post('/api/admin/settings', authenticateAdmin, async (req, res) => {
-  const { googleSheetsWebhookUrl, whatsappNumber, deliveryCharge, freeDeliveryThreshold } = req.body;
+  const { googleSheetsWebhookUrl, whatsappNumber, deliveryCharge, freeDeliveryThreshold, allowedPincodes } = req.body;
+
+  // Validate WhatsApp number (10-14 digits only, must include country code)
+  const phoneRegex = /^\d{10,14}$/;
+  if (whatsappNumber && !phoneRegex.test(whatsappNumber)) {
+    return res.status(400).json({ error: "Invalid WhatsApp number. Must contain only digits with country code (e.g. 919099113823)." });
+  }
+
+  // Validate allowedPincodes (comma-separated list of 6-digit numbers)
+  const pinRegex = /^\d{6}(?:\s*,\s*\d{6})*$/;
+  if (allowedPincodes && !pinRegex.test(allowedPincodes.trim())) {
+    return res.status(400).json({ error: "Invalid allowed pincodes. Must be a comma-separated list of 6-digit numbers (e.g. 392011, 392012)." });
+  }
 
   try {
     const updated = await db.saveSettings({
       googleSheetsWebhookUrl: googleSheetsWebhookUrl || "",
       whatsappNumber: whatsappNumber || "919876543210",
       deliveryCharge: Number(deliveryCharge) || 0,
-      freeDeliveryThreshold: Number(freeDeliveryThreshold) || 0
+      freeDeliveryThreshold: Number(freeDeliveryThreshold) || 0,
+      allowedPincodes: allowedPincodes ? allowedPincodes.trim() : "392011"
     });
 
     if (updated) {

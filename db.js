@@ -20,7 +20,8 @@ const defaultDatabase = {
     googleSheetsWebhookUrl: "",
     whatsappNumber: "919876543210", // Default phone number for orders (with country code, e.g., 91 for India)
     deliveryCharge: 30,
-    freeDeliveryThreshold: 299
+    freeDeliveryThreshold: 299,
+    allowedPincodes: "392011"
   },
   products: [
     // Category 1: Fresh Cut Essentials
@@ -416,6 +417,17 @@ module.exports = {
       const { error } = await supabase.from('settings').upsert({ id: 1, ...settings });
       if (error) {
         console.error("Supabase error saving settings:", error);
+        // If the allowedPincodes column is missing on Supabase, retry without it to avoid crashing the save
+        if (error.message && error.message.includes('allowedPincodes')) {
+          console.warn("Retrying settings save without allowedPincodes because column is missing in Supabase.");
+          const { allowedPincodes, ...restSettings } = settings;
+          const { error: retryError } = await supabase.from('settings').upsert({ id: 1, ...restSettings });
+          if (retryError) {
+            console.error("Retry failed:", retryError);
+            return false;
+          }
+          return true;
+        }
         return false;
       }
       return true;
