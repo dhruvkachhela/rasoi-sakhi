@@ -2419,9 +2419,9 @@ async function handleProductSaveSubmit(e) {
 
 // Dynamically populate delivery slots based on client's cut-off policies:
 // - Morning   (6:00 AM – 7:30 AM)  : order the PREVIOUS NIGHT (available only after 6 PM).
-// - Afternoon (11:00 AM – 12:30 PM): cut-off is 10 AM today (1 hour before).
-// - Evening   (5:00 PM – 6:30 PM)  : cut-off is 4 PM today (1 hour before).
-// All slots are always shown; expired ones are disabled so users understand the schedule.
+// - Afternoon (11:00 AM – 12:30 PM): cut-off 10 AM today (1 hour before delivery).
+// - Evening   (5:00 PM – 6:30 PM)  : cut-off 4 PM today (1 hour before delivery).
+// All slots always shown; expired ones disabled so users understand the schedule.
 function populateDeliverySlots() {
   const slotSelect = document.getElementById('cust-slot');
   if (!slotSelect) return;
@@ -2430,18 +2430,21 @@ function populateDeliverySlots() {
 
   const allSlots = [
     {
-      value: "Morning (Tomorrow, 6:00 AM – 7:30 AM)",
-      label: "🌅 Morning – Tomorrow, 6:00 AM to 7:30 AM",
-      available: currentHour >= 18   // only orderable at night (after 6 PM)
+      value: "Morning (6:00 AM – 7:30 AM)",
+      label: "Morning  —  6:00 AM to 7:30 AM",
+      note:  "Not Available  (order tonight after 6 PM)",
+      available: currentHour >= 18   // orderable only at night
     },
     {
-      value: "Afternoon (Today, 11:00 AM – 12:30 PM)",
-      label: "☀️ Afternoon – Today, 11:00 AM to 12:30 PM",
+      value: "Afternoon (11:00 AM – 12:30 PM)",
+      label: "Afternoon  —  11:00 AM to 12:30 PM",
+      note:  "Not Available  (order by 10 AM)",
       available: currentHour < 10   // cut-off: 10 AM
     },
     {
-      value: "Evening (Today, 5:00 PM – 6:30 PM)",
-      label: "🌙 Evening – Today, 5:00 PM to 6:30 PM",
+      value: "Evening (5:00 PM – 6:30 PM)",
+      label: "Evening  —  5:00 PM to 6:30 PM",
+      note:  "Not Available  (order by 4 PM)",
       available: currentHour < 16   // cut-off: 4 PM
     }
   ];
@@ -2455,7 +2458,7 @@ function populateDeliverySlots() {
   allSlots.forEach(slot => {
     const el = document.createElement('option');
     el.value = slot.available ? slot.value : '';
-    el.textContent = slot.available ? slot.label : slot.label + ' – Not Available';
+    el.textContent = slot.available ? slot.label : slot.note;
     el.disabled = !slot.available;
     slotSelect.appendChild(el);
   });
