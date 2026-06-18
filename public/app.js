@@ -1174,6 +1174,23 @@ function completeCheckoutFlow(formElement, customerDetails, whatsappUrl, orderId
     const waBtn = document.getElementById('success-whatsapp-btn');
     if (waBtn) waBtn.href = whatsappUrl;
 
+    const contactEl = document.getElementById('success-contact-number');
+    if (contactEl) {
+      const rawNum = state.publicSettings && state.publicSettings.whatsappNumber 
+        ? state.publicSettings.whatsappNumber 
+        : '919099113823';
+      
+      let formattedNum = rawNum;
+      if (rawNum.startsWith('91') && rawNum.length === 12) {
+        formattedNum = `+91 ${rawNum.slice(2, 7)} ${rawNum.slice(7)}`;
+      } else if (rawNum.length === 10) {
+        formattedNum = `+91 ${rawNum.slice(0, 5)} ${rawNum.slice(5)}`;
+      } else {
+        formattedNum = `+${rawNum}`;
+      }
+      contactEl.innerText = formattedNum;
+    }
+
     successModal.classList.remove('hide');
 
     // Auto-trigger WhatsApp redirection
