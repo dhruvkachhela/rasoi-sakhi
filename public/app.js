@@ -2418,79 +2418,60 @@ async function handleProductSaveSubmit(e) {
 }
 
 // Dynamically populate delivery slots based on client's cut-off policies:
-// - Morning delivery (7 AM): must be ordered the PREVIOUS NIGHT (available only after 6 PM the night before).
-// - Afternoon delivery (1 PM): must order at least 1 hour before → cut-off is 12 PM (noon) today.
-// - Evening delivery (7 PM): must order at least 1 hour before → cut-off is 6 PM today.
+// - Morning delivery (7 AM): must be ordered the PREVIOUS NIGHT (available only after 6 PM).
+// - Afternoon delivery (1 PM): cut-off is 12 PM (noon) today.
+// - Evening delivery (7 PM): cut-off is 6 PM today.
+// All slots are always shown; expired ones are disabled so users understand the schedule.
 function populateDeliverySlots() {
   const slotSelect = document.getElementById('cust-slot');
   if (!slotSelect) return;
 
-  const now = new Date();
-  const currentHour = now.getHours(); // 0–23
+  const currentHour = new Date().getHours(); // 0–23
 
-  const options = [];
-
-  // ── TODAY'S SLOTS ───────────────────────────────────────────────
-  // Afternoon (1 PM) → cut-off: 12 PM noon today
-  if (currentHour < 12) {
-    options.push({
+  const allSlots = [
+    {
       value: "Afternoon (Today, 1:00 PM)",
-      text:  "☀️ Afternoon – Today, 1:00 PM (order by 12 PM noon)"
-    });
-  }
-
-  // Evening (7 PM) → cut-off: 6 PM today
-  if (currentHour < 18) {
-    options.push({
+      label: "☀️ Afternoon – Today, 1:00 PM",
+      available: currentHour < 12
+    },
+    {
       value: "Evening (Today, 7:00 PM)",
-      text:  "🌙 Evening – Today, 7:00 PM (order by 6 PM)"
-    });
-  }
-
-  // ── TOMORROW'S MORNING SLOT ─────────────────────────────────────
-  // Morning (7 AM tomorrow) → only orderable at NIGHT (after 6 PM today)
-  // During daytime (before 6 PM) this slot is NOT shown because the
-  // client requires the order to come in the previous night.
-  if (currentHour >= 18) {
-    options.push({
+      label: "🌙 Evening – Today, 7:00 PM",
+      available: currentHour < 18
+    },
+    {
       value: "Morning (Tomorrow, 7:00 AM)",
-      text:  "🌅 Morning – Tomorrow, 7:00 AM (order tonight)"
-    });
-  }
+      label: "🌅 Morning – Tomorrow, 7:00 AM",
+      available: currentHour >= 18
+    }
+  ];
 
-  // If no slots are available right now (e.g., 6 PM–midnight window
-  // has passed and it's after midnight but before next day opens),
-  // show a disabled placeholder.
-  if (options.length === 0) {
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = '⚠️ No slots available right now — please try after 6 PM for tomorrow morning';
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    slotSelect.innerHTML = '';
-    slotSelect.appendChild(placeholder);
-    return;
-  }
-
-  // Save current selection value if any
+  // Save current selection value
   const previousValue = slotSelect.value;
 
-  // Clear dropdown
+  // Rebuild dropdown
   slotSelect.innerHTML = '';
 
-  // Append valid options
-  options.forEach(opt => {
+  allSlots.forEach(slot => {
     const el = document.createElement('option');
-    el.value = opt.value;
-    el.textContent = opt.text;
+    el.value = slot.available ? slot.value : '';
+    el.textContent = slot.available ? slot.label : slot.label + ' – Not Available';
+    el.disabled = !slot.available;
     slotSelect.appendChild(el);
   });
 
-  // Restore previous selection if still valid
+  // Restore previous selection if still available
   if (previousValue) {
-    const exists = Array.from(slotSelect.options).some(o => o.value === previousValue);
-    if (exists) slotSelect.value = previousValue;
+    const exists = Array.from(slotSelect.options).some(o => o.value === previousValue && !o.disabled);
+    if (exists) {
+      slotSelect.value = previousValue;
+      return;
+    }
   }
+
+  // Auto-select first available option
+  const firstAvailable = Array.from(slotSelect.options).find(o => !o.disabled);
+  if (firstAvailable) slotSelect.value = firstAvailable.value;
 }
 
 // Prefills checkout form with customer details from localStorage if present
