@@ -2418,60 +2418,67 @@ async function handleProductSaveSubmit(e) {
 }
 
 // Dynamically populate delivery slots based on client's cut-off policies:
-// - Morning delivery starts at 6:00 AM and must be ordered the previous night (before 12:00 AM of the day).
-// - Afternoon delivery starts at 11:00 AM and must be ordered at least 1 hour in advance (before 10:00 AM of the day).
-// - Evening delivery starts at 5:00 PM and must be ordered at least 1 hour in advance (before 4:00 PM of the day).
+// - Morning delivery (7 AM): must be ordered the PREVIOUS NIGHT (available only after 6 PM the night before).
+// - Afternoon delivery (1 PM): must order at least 1 hour before → cut-off is 12 PM (noon) today.
+// - Evening delivery (7 PM): must order at least 1 hour before → cut-off is 6 PM today.
 function populateDeliverySlots() {
   const slotSelect = document.getElementById('cust-slot');
   if (!slotSelect) return;
 
   const now = new Date();
-  const currentHour = now.getHours();
+  const currentHour = now.getHours(); // 0–23
 
-  // Create list of options
   const options = [];
 
-  // 1. Afternoon Slot (Today): Eligible if ordered before 10:00 AM today
-  if (currentHour < 10) {
+  // ── TODAY'S SLOTS ───────────────────────────────────────────────
+  // Afternoon (1 PM) → cut-off: 12 PM noon today
+  if (currentHour < 12) {
     options.push({
-      value: "Afternoon (Today, 11:00 AM - 12:30 PM)",
-      text: "Afternoon (Today, 11:00 AM - 12:30 PM)"
+      value: "Afternoon (Today, 1:00 PM)",
+      text:  "☀️ Afternoon – Today, 1:00 PM (order by 12 PM noon)"
     });
   }
 
-  // 2. Evening Slot (Today): Eligible if ordered before 4:00 PM today
-  if (currentHour < 16) {
+  // Evening (7 PM) → cut-off: 6 PM today
+  if (currentHour < 18) {
     options.push({
-      value: "Evening (Today, 5:00 PM - 6:30 PM)",
-      text: "Evening (Today, 5:00 PM - 6:30 PM)"
+      value: "Evening (Today, 7:00 PM)",
+      text:  "🌙 Evening – Today, 7:00 PM (order by 6 PM)"
     });
   }
 
-  // 3. Morning Slot (Tomorrow): Always eligible (since placing it today is "previous night" relative to tomorrow morning)
-  options.push({
-    value: "Morning (Tomorrow, 6:00 AM - 7:30 AM)",
-    text: "Morning (Tomorrow, 6:00 AM - 7:30 AM)"
-  });
+  // ── TOMORROW'S MORNING SLOT ─────────────────────────────────────
+  // Morning (7 AM tomorrow) → only orderable at NIGHT (after 6 PM today)
+  // During daytime (before 6 PM) this slot is NOT shown because the
+  // client requires the order to come in the previous night.
+  if (currentHour >= 18) {
+    options.push({
+      value: "Morning (Tomorrow, 7:00 AM)",
+      text:  "🌅 Morning – Tomorrow, 7:00 AM (order tonight)"
+    });
+  }
 
-  // 4. Afternoon Slot (Tomorrow): Always eligible
-  options.push({
-    value: "Afternoon (Tomorrow, 11:00 AM - 12:30 PM)",
-    text: "Afternoon (Tomorrow, 11:00 AM - 12:30 PM)"
-  });
-
-  // 5. Evening Slot (Tomorrow): Always eligible
-  options.push({
-    value: "Evening (Tomorrow, 5:00 PM - 6:30 PM)",
-    text: "Evening (Tomorrow, 5:00 PM - 6:30 PM)"
-  });
+  // If no slots are available right now (e.g., 6 PM–midnight window
+  // has passed and it's after midnight but before next day opens),
+  // show a disabled placeholder.
+  if (options.length === 0) {
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '⚠️ No slots available right now — please try after 6 PM for tomorrow morning';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    slotSelect.innerHTML = '';
+    slotSelect.appendChild(placeholder);
+    return;
+  }
 
   // Save current selection value if any
   const previousValue = slotSelect.value;
 
-  // Clear dropdown options
+  // Clear dropdown
   slotSelect.innerHTML = '';
 
-  // Append new options
+  // Append valid options
   options.forEach(opt => {
     const el = document.createElement('option');
     el.value = opt.value;
@@ -2479,12 +2486,10 @@ function populateDeliverySlots() {
     slotSelect.appendChild(el);
   });
 
-  // Try to restore previous selection if it is still one of the options
+  // Restore previous selection if still valid
   if (previousValue) {
     const exists = Array.from(slotSelect.options).some(o => o.value === previousValue);
-    if (exists) {
-      slotSelect.value = previousValue;
-    }
+    if (exists) slotSelect.value = previousValue;
   }
 }
 
