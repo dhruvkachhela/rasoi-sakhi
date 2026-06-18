@@ -2418,9 +2418,9 @@ async function handleProductSaveSubmit(e) {
 }
 
 // Dynamically populate delivery slots based on client's cut-off policies:
-// - Morning delivery (7 AM): must be ordered the PREVIOUS NIGHT (available only after 6 PM).
-// - Afternoon delivery (1 PM): cut-off is 12 PM (noon) today.
-// - Evening delivery (7 PM): cut-off is 6 PM today.
+// - Morning   (6:00 AM – 7:30 AM)  : order the PREVIOUS NIGHT (available only after 6 PM).
+// - Afternoon (11:00 AM – 12:30 PM): cut-off is 10 AM today (1 hour before).
+// - Evening   (5:00 PM – 6:30 PM)  : cut-off is 4 PM today (1 hour before).
 // All slots are always shown; expired ones are disabled so users understand the schedule.
 function populateDeliverySlots() {
   const slotSelect = document.getElementById('cust-slot');
@@ -2430,19 +2430,19 @@ function populateDeliverySlots() {
 
   const allSlots = [
     {
-      value: "Afternoon (Today, 1:00 PM)",
-      label: "☀️ Afternoon – Today, 1:00 PM",
-      available: currentHour < 12
+      value: "Morning (Tomorrow, 6:00 AM – 7:30 AM)",
+      label: "🌅 Morning – Tomorrow, 6:00 AM to 7:30 AM",
+      available: currentHour >= 18   // only orderable at night (after 6 PM)
     },
     {
-      value: "Evening (Today, 7:00 PM)",
-      label: "🌙 Evening – Today, 7:00 PM",
-      available: currentHour < 18
+      value: "Afternoon (Today, 11:00 AM – 12:30 PM)",
+      label: "☀️ Afternoon – Today, 11:00 AM to 12:30 PM",
+      available: currentHour < 10   // cut-off: 10 AM
     },
     {
-      value: "Morning (Tomorrow, 7:00 AM)",
-      label: "🌅 Morning – Tomorrow, 7:00 AM",
-      available: currentHour >= 18
+      value: "Evening (Today, 5:00 PM – 6:30 PM)",
+      label: "🌙 Evening – Today, 5:00 PM to 6:30 PM",
+      available: currentHour < 16   // cut-off: 4 PM
     }
   ];
 
