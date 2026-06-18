@@ -1724,21 +1724,21 @@ async function loadAdminOrders() {
       const { orders, total } = await res.json();
       state.totalOrders = total || 0;
       
-      let hasNewUnread = false;
+      let newOrdersCount = 0;
       orders.forEach(o => {
         if (!state.knownOrderIds.has(o.id)) {
           state.knownOrderIds.add(o.id);
           // Only play notification/show toast if we had already loaded orders once before
           if (state.hasInitiallyLoadedOrders) {
-            hasNewUnread = true;
             showNewOrderToast(o);
+            // Stagger chime sound for each new order to ensure distinct alerts
+            setTimeout(() => {
+              playNotificationSound();
+            }, newOrdersCount * 600);
+            newOrdersCount++;
           }
         }
       });
-
-      if (hasNewUnread) {
-        playNotificationSound();
-      }
 
       state.hasInitiallyLoadedOrders = true;
       adminOrders = orders;
