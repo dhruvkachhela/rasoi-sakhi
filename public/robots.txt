@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Exclude admin dashboard from search engine indexing
+Disallow: /#admin-section
+Disallow: /api/admin/
