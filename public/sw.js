@@ -16,14 +16,12 @@ self.addEventListener('push', function(event) {
   var body = data.body || 'You have a new notification!';
   var icon = self.location.origin + '/assets/logo.jpg';
   var badge = self.location.origin + '/assets/logo.jpg';
-  var tag = data.tag || 'rasoi-sakhi-notification';
   var openUrl = data.url || '/#admin-section';
 
   var options = {
     body: body,
     icon: icon,
     badge: badge,
-    tag: tag,
     vibrate: [200, 100, 200],
     requireInteraction: true,
     data: {
@@ -32,9 +30,26 @@ self.addEventListener('push', function(event) {
     }
   };
 
+  // Only assign tag if explicitly provided and not the default fallback,
+  // preventing notifications from overwriting each other in the system tray.
+  if (data.tag && data.tag !== 'rasoi-sakhi-notification') {
+    options.tag = data.tag;
+    options.renotify = true;
+  }
+
   event.waitUntil(
     self.registration.showNotification(title, options)
   );
+});
+
+// Immediately activate the service worker once installed
+self.addEventListener('install', function(event) {
+  self.skipWaiting();
+});
+
+// Claim clients immediately upon activation to ensure latest worker is active
+self.addEventListener('activate', function(event) {
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('notificationclick', function(event) {
