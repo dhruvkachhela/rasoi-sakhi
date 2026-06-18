@@ -46,7 +46,12 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'rasoi-sakhi-secret-key-2026';
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -468,7 +473,7 @@ app.post('/api/payments/webhook', async (req, res) => {
 
   const crypto = require('crypto');
   const shasum = crypto.createHmac('sha256', webhookSecret);
-  shasum.update(JSON.stringify(req.body));
+  shasum.update(req.rawBody || JSON.stringify(req.body));
   const digest = shasum.digest('hex');
   if (digest !== signature) {
     console.warn("Invalid Razorpay webhook signature detected! Rejecting request.");
