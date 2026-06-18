@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rasoi Sakhi - Ultimate System Documentation & Support Guide</title>
+  <style>
+    /* Styling for screen and print output */
+    :root {
+      --primary: #12301D;
+      --accent: #EED14B;
+      --text-dark: #2B2927;
+      --text-muted: #566259;
+      --bg-light: #F9F6F0;
+      --border-color: #EBE6DF;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-dark);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+
+    /* Print-specific layout */
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
+
+    /* Cover Page */
+    .cover {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background-color: var(--bg-light);
+      padding: 40px;
+      box-sizing: border-box;
+      border: 10px solid var(--primary);
+    }
+
+    .cover h1 {
+      font-size: 3.5rem;
+      color: var(--primary);
+      margin-bottom: 10px;
+      font-family: Georgia, serif;
+      letter-spacing: 0.05em;
+    }
+
+    .cover h2 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-top: 0;
+      margin-bottom: 50px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .cover-meta {
+      margin-top: auto;
+      font-size: 0.9rem;
+      color: var(--text-dark);
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+      width: 80%;
+    }
+
+    /* Document Structure */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    h1, h2, h3, h4 {
+      color: var(--primary);
+      font-family: Georgia, serif;
+    }
+
+    h1 {
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+      margin-top: 40px;
+    }
+
+    h2 {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 5px;
+      margin-top: 30px;
+    }
+
+    p, li {
+      font-size: 1rem;
+      color: #333333;
+    }
+
+    ul, ol {
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    code {
+      font-family: Consolas, Monaco, monospace;
+      background-color: var(--bg-light);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: #c7254e;
+    }
+
+    pre {
+      background-color: var(--bg-light);
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      margin: 15px 0;
+    }
+
+    pre code {
+      background-color: transparent;
+      padding: 0;
+      color: var(--text-dark);
+      font-size: 0.85rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background-color: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) td {
+      background-color: var(--bg-light);
+    }
+
+    .alert {
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 5px solid var(--primary);
+      background-color: var(--bg-light);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .alert-danger {
+      border-left-color: #d9534f;
+      background-color: #fdf7f7;
+    }
+
+    .alert-danger h4 {
+      color: #d9534f;
+      margin-top: 0;
+      margin-bottom: 5px;
+    }
+
+    .alert-info {
+      border-left-color: #31708f;
+      background-color: #f4f8fa;
+    }
+
+    .alert-info h4 {
+      color: #31708f;
+      margin-top: 0;
+      margin-bottom: 5px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background-color: var(--primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COVER PAGE -->
+  <div class="cover">
+    <h1>Rasoi Sakhi</h1>
+    <h2>System Documentation &amp; Launch Guide</h2>
+    <p>A comprehensive operations manual for developers, clients, and administrators.</p>
+    <div class="cover-meta">
+      <p><strong>Version:</strong> 1.0.0 (Production-Ready)</p>
+      <p><strong>Date:</strong> June 2026</p>
+      <p><strong>Primary Deployment:</strong> Vercel Serverless Hosting</p>
+      <p><strong>Database &amp; Storage:</strong> Supabase PostgreSQL &amp; Bucket Storage</p>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- CONTAINER FOR DOCUMENTATION CONTENT -->
+  <div class="container">
+
+    <h1>1. System Overview</h1>
+    <p>Rasoi Sakhi is a premium web platform built specifically for ordering professionally cleaned, washed, and cut ready-to-cook vegetables. The website operates as a Single Page Application (SPA) on the frontend for ultra-fast, premium-feel transitions, backed by an Express API deployed to Vercel Serverless Functions and a Supabase database.</p>
+    
+    <h3>Core Tech Stack</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Technology</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Frontend</strong></td>
+          <td>HTML5, Vanilla CSS3, Javascript (ES6)</td>
+          <td>Responsive user interfaces, order flow, admin settings panel.</td>
+        </tr>
+        <tr>
+          <td><strong>Backend</strong></td>
+          <td>Node.js, Express framework</td>
+          <td>Serverless API handling order creation, setting controls, and webhook callbacks.</td>
+        </tr>
+        <tr>
+          <td><strong>Database</strong></td>
+          <td>Supabase (PostgreSQL)</td>
+          <td>Persistent storage for products, orders, settings, users, and push keys.</td>
+        </tr>
+        <tr>
+          <td><strong>File Storage</strong></td>
+          <td>Supabase Storage Buckets</td>
+          <td>Image hosting for custom product photos.</td>
+        </tr>
+        <tr>
+          <td><strong>Payments</strong></td>
+          <td>Razorpay SDK (Live)</td>
+          <td>Secure online credit/debit card, netbanking, and UPI checkout flow.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h1>2. Razorpay Live Integration &amp; Webhooks</h1>
+    <p>Online payment verification uses a dual client-server flow combined with Razorpay webhooks to guarantee order status security and prevent payment bypass hacks.</p>
+    
+    <h2>A. Payment Verification Flow</h2>
+    <ol>
+      <li><strong>Order Creation:</strong> When a customer clicks checkout, the server calls Razorpay to generate a unique `Razorpay Order ID` (prefixed with `order_`).</li>
+      <li><strong>Database Mapping:</strong> The server maps this `Razorpay Order ID` to our local database order ID in a secure database table (`payment_mappings`) before returning the details to the user.</li>
+      <li><strong>Checkout Window:</strong> The frontend initializes the Razorpay SDK checkout overlay. The user selects UPI, Card, or Netbanking.</li>
+      <li><strong>Webhook Callback (The Automator):</strong> Once the payment is successfully completed, Razorpay issues a server-to-server HTTP POST request to our webhook endpoint `/api/payments/webhook`.</li>
+      <li><strong>Signature Verification:</strong> The server reads the raw binary body (`req.rawBody`) and computes an HMAC-SHA256 signature using the secret configured in `.env`. If the computed signature matches the header `x-razorpay-signature`, the payload is verified as genuine.</li>
+      <li><strong>Status Progression:</strong> The server checks the local database mapping table using the received `order_id`, changes the order status from <code>Payment Pending</code> to <code>Payment Received</code>, and pushes the order details to the Google Sheets webhook.</li>
+    </ol>
+
+    <h2>B. Setting Up Webhooks in Razorpay Dashboard</h2>
+    <p>To automate status updates, the client must configure the webhook in their Razorpay account:</p>
+    <ul>
+      <li><strong>Webhook URL:</strong> <code>https://&lt;your-vercel-domain&gt;/api/payments/webhook</code></li>
+      <li><strong>Secret:</strong> <code>rasoisakhi_live_webhook_secret_secure_2026</code></li>
+      <li><strong>Active Event:</strong> <code>order.paid</code></li>
+    </ul>
+
+    <div class="alert alert-danger">
+      <h4>⚠️ Webhook Mismatch Warning</h4>
+      <p>If the signature fails validation, the status will remain <code>Payment Pending</code>. Ensure that the <code>RAZORPAY_WEBHOOK_SECRET</code> matches exactly between the Razorpay Dashboard and the Vercel/environment configuration.</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h1>3. Delivery Slot Logic &amp; Cut-offs</h1>
+    <p>Orders are governed by strict scheduling constraints to ensure the kitchen has time to wash, sanitize, and cut the vegetables before delivery. The server enforces these slots, and the frontend automatically updates the dropdown labels and disables past slots.</p>
+
+    <h3>Active Delivery Slots Table</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Slot name</th>
+          <th>Delivery hours</th>
+          <th>Order cut-off rule</th>
+          <th>Availability label format</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Morning</strong></td>
+          <td>6:00 AM – 7:30 AM</td>
+          <td>Order must be placed the previous night <strong>after 6:00 PM</strong></td>
+          <td><code>Morning — 6:00 AM to 7:30 AM (order tonight after 6 PM)</code></td>
+        </tr>
+        <tr>
+          <td><strong>Afternoon</strong></td>
+          <td>11:00 AM – 12:30 PM</td>
+          <td>Order must be placed today <strong>before 10:00 AM</strong></td>
+          <td><code>Afternoon — 11:00 AM to 12:30 PM (order by 10 AM)</code></td>
+        </tr>
+        <tr>
+          <td><strong>Evening</strong></td>
+          <td>5:00 PM – 6:30 PM</td>
+          <td>Order must be placed today <strong>before 4:00 PM</strong></td>
+          <td><code>Evening — 5:00 PM to 6:30 PM (order by 4 PM)</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>How the Logic Behaves:</h2>
+    <ul>
+      <li><strong>If current time is 11:00 AM (Today):</strong> The Afternoon and Evening slots are closed (it is past 10:00 AM, and evening is not yet 6:00 PM for tomorrow morning's slot). The Morning slot for tomorrow is also closed since it's not yet 6:00 PM. They will show as <code>— Not Available</code>.</li>
+      <li><strong>If current time is 6:30 PM (Tonight):</strong> The Morning slot is unlocked since it is after 6:00 PM. The Afternoon and Evening slots are closed.</li>
+      <li><strong>If a slot is closed:</strong> It is disabled (greyed out) in the checkout dropdown list, ensuring customers cannot place an order for a delivery time that the kitchen cannot fulfill.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h1>4. Progressive Web App (PWA) &amp; Push Notifications</h1>
+    <p>Rasoi Sakhi supports instant mobile push notifications for the admin, alerting them the second an order changes to "Payment Received". This is built using standard Web Push protocols (VAPID) and Service Workers.</p>
+
+    <h2>A. The iOS Safari Issue &amp; Workaround</h2>
+    <p>By default, Apple's iOS Safari disables push notification APIs to prevent websites from spamming users. The only way to activate them is to use PWA features:</p>
+    <ol>
+      <li><strong>Install as App:</strong> The user must install the website to their Home Screen. We provide a <code>manifest.json</code> linked in the HTML head to let Safari register it as a standalone app.</li>
+      <li><strong>Add to Home Screen:</strong> Open the site on an iPhone in Safari, tap the <strong>Share</strong> button, and tap <strong>"Add to Home Screen"</strong>.</li>
+      <li><strong>Launch &amp; Accept:</strong> Open the newly installed app from the Home Screen, go to the Admin Settings panel, and tap <strong>"Enable Notifications"</strong>. Because the app runs in standalone PWA mode, iOS Safari unlocks `PushManager` and shows the permission popup.</li>
+    </ol>
+
+    <h2>B. How the Push flow works</h2>
+    <ol>
+      <li>The admin enables notifications, producing a subscription object containing a unique browser endpoint.</li>
+      <li>The subscription is saved to the Supabase database.</li>
+      <li>When a payment is captured via the webhook, the server queries active push subscriptions and triggers web-push notifications using the server VAPID keys.</li>
+      <li>The browser's service worker (`sw.js`) intercepts the event in the background and shows the alert on the admin's device.</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h1>5. System Settings &amp; Configuration</h1>
+    <p>The Admin Dashboard has a settings tab that saves rules directly into the Supabase database. These sync to the client app in real-time.</p>
+
+    <h2>A. Allowed Delivery Pincodes</h2>
+    <p>To restrict delivery to valid regions in Bharuch, the admin can configure multiple pincodes. Enter them as a **comma-separated list**:</p>
+    <pre><code>392011, 392012, 392015</code></pre>
+    <p>The frontend validates checkout entries by converting the input to an array and checking if the customer's pincode is supported. If a customer enters a pincode not on the list (e.g. `392001`), checkout will block and show supported delivery options.</p>
+
+    <h2>B. WhatsApp Number Configuration</h2>
+    <p>Enter the mobile number with country code, but without spaces or symbols (e.g. `919099113823`). When a customer completes checkout, the system compiles a formatted order details message and redirects them to WhatsApp to start a conversation with the kitchen.</p>
+
+    <h2>C. Delivery Charges &amp; Free Delivery</h2>
+    <ul>
+      <li><strong>Base Delivery Charge:</strong> The fee added to checkout (e.g., ₹30).</li>
+      <li><strong>Free Delivery Threshold:</strong> The subtotal amount above which delivery fee is set to ₹0 (e.g., ₹299).</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h1>6. Troubleshooting &amp; Maintenance</h1>
+    <p>A reference checklist for developers if something goes wrong in production.</p>
+
+    <h3>1. Payments are completed but orders stay "Payment Pending"</h3>
+    <ul>
+      <li><strong>Check Webhook Logs:</strong> Check the Razorpay Dashboard to see if webhook HTTP requests are returning success status (200).</li>
+      <li><strong>Check Secret Mismatch:</strong> Ensure that the environment variable `RAZORPAY_WEBHOOK_SECRET` on Vercel matches the secret entered on the Razorpay Webhooks dashboard.</li>
+      <li><strong>Supabase Connection:</strong> Ensure Supabase service role keys have not expired. Check server start logs to ensure database connections are active.</li>
+    </ul>
+
+    <h3>2. "Invalid Webhook Signature" errors on the server</h3>
+    <ul>
+      <li>This happens if Express parses the body before verification. Ensure that `req.rawBody` is used. We have implemented raw body extraction in our body parser:
+      <pre><code>app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));</code></pre>
+      </li>
+    </ul>
+
+    <h3>3. Uploaded product images are slow to load</h3>
+    <ul>
+      <li><strong>WebP Auto-Conversion:</strong> Ensure `sharp` is present in your production dependencies (NOT devDependencies) in <code>package.json</code>. The Express server is programmed to intercept base64 uploads, compress them, convert them to WebP format, and rename them to `.webp` before sending to Supabase storage. If `sharp` fails to load, uploads will crash. Check Vercel function log errors.</li>
+    </ul>
+
+    <h3>4. Google Sheets is not updating</h3>
+    <ul>
+      <li><strong>Quota limits:</strong> Google Sheets Apps Script has a daily quota on URL requests. Check Apps Script logs in the Google Drive console.</li>
+      <li><strong>Setting URL check:</strong> Make sure the Apps Script execution URL is saved correctly in the Admin Dashboard Settings page.</li>
+    </ul>
+
+  </div>
+
+</body>
+</html>
