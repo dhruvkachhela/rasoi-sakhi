@@ -8,8 +8,24 @@
   ],
   "routes": [
     {
+      "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=2592000, stale-while-revalidate=86400",
+        "Vary": "Accept-Encoding"
+      },
+      "dest": "/server.js"
+    },
+    {
+      "src": "/(style\\.css|app\\.js)",
+      "headers": {
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
+        "Vary": "Accept-Encoding"
+      },
+      "dest": "/server.js"
+    },
+    {
       "src": "/(.*)",
-      "dest": "server.js"
+      "dest": "/server.js"
     }
   ]
 }

@@ -373,7 +373,7 @@ button, input, select, textarea {
 .hero {
   position: relative;
   padding: var(--spacing-xl) var(--spacing-sm);
-  background-image: url('/assets/rasoi_sakhi_hero_background_custom.png');
+  background-image: url('/assets/rasoi_sakhi_hero_background_custom.webp');
   background-size: cover;
   background-position: center;
   min-height: 60vh;

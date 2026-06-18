@@ -5,6 +5,19 @@
 const API_BASE = '/api';
 let ordersLimit = 50;
 
+// Lazy-loads the Razorpay SDK only when a UPI payment is initiated.
+// Safe to call multiple times — injects the script only once.
+function loadRazorpaySDK() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+    document.head.appendChild(script);
+  });
+}
+
 // Core State
 let state = {
   products: [],
@@ -290,7 +303,8 @@ function getVeggieSVG(id, strokeColor = 'var(--color-primary)', width = '100%', 
 // Helper to load generated veggie images or fallback to inline SVGs
 function getProductVisualHTML(imageName, name, cssStyles = 'width: 100%; height: 100%; object-fit: cover;') {
   if (imageName && (imageName.startsWith('http') || imageName.startsWith('/assets/'))) {
-    return `<img src="${imageName}" alt="${name}" style="${cssStyles}">`;
+    // For externally uploaded images — lazy load but no WebP conversion
+    return `<img src="${imageName}" alt="${name}" style="${cssStyles}" loading="lazy" decoding="async">`;
   }
 
   const knownImages = [
@@ -298,7 +312,11 @@ function getProductVisualHTML(imageName, name, cssStyles = 'width: 100%; height:
     'cabbage-sliced', 'loki-chopped', 'cucumber-sliced', 'carrot-cubes', 'capsicum-chopped', 'biryani-pack', 'stir-fry-pack'
   ];
   if (knownImages.includes(imageName)) {
-    return `<img src="/assets/${imageName}.png" alt="${name}" style="${cssStyles}">`;
+    // Use <picture> for WebP with PNG fallback + lazy loading
+    return `<picture>
+      <source srcset="/assets/${imageName}.webp" type="image/webp">
+      <img src="/assets/${imageName}.png" alt="${name}" style="${cssStyles}" loading="lazy" decoding="async">
+    </picture>`;
   }
   // Fallback to inline SVG
   return `<div style="width: 50%; height: 50%; display: flex; align-items: center; justify-content: center;">${getVeggieSVG(imageName)}</div>`;
@@ -1321,6 +1339,8 @@ async function handleCheckoutSubmit(e) {
             } 
           }
         };
+        // Load Razorpay SDK on demand — only when UPI payment is actually needed
+        await loadRazorpaySDK();
         const rzp1 = new Razorpay(options);
         rzp1.open();
       } else {
