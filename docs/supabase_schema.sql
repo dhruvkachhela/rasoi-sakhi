@@ -1,9 +1,20 @@
--- ==========================================
--- RASOI SAKHI - DATABASE SCHEMA FOR SUPABASE
--- Run this in the Supabase SQL Editor
--- ==========================================
+-- ==============================================================
+-- RASOI SAKHI - DATABASE RE-CREATION SCHEMA (PRODUCTION STACK)
+-- Run this in the SQL Editor of your CLIENT'S Supabase Dashboard
+-- WARNING: This will drop any existing tables to rebuild them cleanly.
+-- ==============================================================
 
--- 1. Create 'settings' table
+-- 1. Drop existing tables if they exist (clean slate)
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS "pushSubscriptions" CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS testimonials CASCADE;
+DROP TABLE IF EXISTS payment_mappings CASCADE;
+DROP TABLE IF EXISTS contact_messages CASCADE;
+
+-- 2. Create 'settings' table
 CREATE TABLE IF NOT EXISTS settings (
   id INT8 PRIMARY KEY,
   "googleSheetsWebhookUrl" TEXT DEFAULT '',
@@ -13,7 +24,7 @@ CREATE TABLE IF NOT EXISTS settings (
   "allowedPincodes" TEXT DEFAULT '392011'
 );
 
--- 2. Create 'users' table (Admin access)
+-- 3. Create 'users' table
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL,
@@ -21,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
   "createdAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Create 'products' table
+-- 4. Create 'products' table
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -29,42 +40,42 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT DEFAULT '',
   "freshnessInfo" TEXT DEFAULT '',
   "storageInstructions" TEXT DEFAULT '',
-  price NUMERIC DEFAULT 0,
-  "baseWeight" TEXT DEFAULT '',
-  "weightOptions" JSONB DEFAULT '[]'::jsonb,
-  image TEXT DEFAULT '',
+  price NUMERIC NOT NULL,
+  "baseWeight" TEXT NOT NULL,
+  "weightOptions" JSONB NOT NULL,
+  image TEXT NOT NULL,
   popular BOOLEAN DEFAULT false
 );
 
--- 4. Create 'orders' table
+-- 5. Create 'orders' table
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY,
   "customerName" TEXT NOT NULL,
   "customerPhone" TEXT NOT NULL,
   "customerEmail" TEXT DEFAULT '',
-  "customerAddress" TEXT NOT NULL,
-  "customerLandmark" TEXT DEFAULT '',
-  items JSONB DEFAULT '[]'::jsonb,
-  "subtotalAmount" NUMERIC DEFAULT 0,
-  "deliveryAmount" NUMERIC DEFAULT 0,
-  "totalAmount" NUMERIC DEFAULT 0,
-  "paymentMethod" TEXT DEFAULT 'COD',
-  "deliverySlot" TEXT DEFAULT '',
-  status TEXT DEFAULT 'Payment Pending',
+  "deliveryAddress" TEXT NOT NULL,
+  landmark TEXT DEFAULT '',
+  "deliverySlot" TEXT NOT NULL,
+  "paymentMethod" TEXT NOT NULL,
+  items JSONB NOT NULL,
+  subtotal NUMERIC NOT NULL,
+  "deliveryCharge" NUMERIC NOT NULL,
+  "totalAmount" NUMERIC NOT NULL,
+  status TEXT DEFAULT 'Pending',
   "createdAt" TIMESTAMPTZ DEFAULT NOW(),
   "isRead" BOOLEAN DEFAULT false
 );
 
--- 5. Create 'testimonials' table
+-- 6. Create 'testimonials' table
 CREATE TABLE IF NOT EXISTS testimonials (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  role TEXT DEFAULT '',
-  quote TEXT DEFAULT '',
-  rating INT8 DEFAULT 5
+  role TEXT NOT NULL,
+  quote TEXT NOT NULL,
+  rating INTEGER NOT NULL
 );
 
--- 6. Create 'payment_mappings' table (Razorpay Order-to-Local Order mappings)
+-- 7. Create 'payment_mappings' table
 CREATE TABLE IF NOT EXISTS payment_mappings (
   razorpay_order_id TEXT PRIMARY KEY,
   order_id TEXT NOT NULL,
@@ -72,15 +83,15 @@ CREATE TABLE IF NOT EXISTS payment_mappings (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Create 'pushSubscriptions' table (camelCase)
+-- 8. Create 'pushSubscriptions' table (camelCase table name and fields)
 CREATE TABLE IF NOT EXISTS "pushSubscriptions" (
   endpoint TEXT PRIMARY KEY,
   "expirationTime" TEXT,
-  keys JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  keys JSONB,
+  "createdAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. Create 'contact_messages' table
+-- 9. Create 'contact_messages' table
 CREATE TABLE IF NOT EXISTS contact_messages (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,

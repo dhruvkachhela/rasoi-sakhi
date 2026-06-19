@@ -83,6 +83,27 @@ async function fetchProducts() {
     const res = await fetch(`${API_BASE}/products`);
     if (!res.ok) throw new Error("Could not fetch products");
     state.products = await res.json();
+
+    // Filter out items in the cart that are either deleted or sold out
+    let cartModified = false;
+    state.cart = state.cart.filter(item => {
+      const product = state.products.find(p => p.id === item.id);
+      if (!product) {
+        cartModified = true;
+        return false;
+      }
+      if (product.soldOut) {
+        cartModified = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (cartModified) {
+      saveCart();
+    }
+
+    updateCartUI();
     renderProducts();
     renderPopularProducts();
   } catch (err) {
