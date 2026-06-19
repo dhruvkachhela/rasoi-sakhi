@@ -1278,7 +1278,7 @@ async function handleCheckoutSubmit(e) {
   if (!allowedList.includes(pincode)) {
     alert(`Sorry, delivery is only available for pincodes: ${allowedList.join(', ')}.`);
     checkoutBtn.disabled = false;
-    checkoutBtn.innerText = "Order Now via WhatsApp & Excel";
+    checkoutBtn.innerText = "Order Now";
     return;
   }
 
@@ -1286,7 +1286,7 @@ async function handleCheckoutSubmit(e) {
   if (rawPhone.length !== 10) {
     alert("Please enter a valid 10-digit Indian mobile number.");
     checkoutBtn.disabled = false;
-    checkoutBtn.innerText = "Order Now via WhatsApp & Excel";
+    checkoutBtn.innerText = "Order Now";
     return;
   }
 
@@ -1356,7 +1356,7 @@ async function handleCheckoutSubmit(e) {
           modal: { 
             ondismiss: function () { 
               checkoutBtn.disabled = false; 
-              checkoutBtn.innerText = "Order Now via WhatsApp & Excel"; 
+              checkoutBtn.innerText = "Order Now"; 
             } 
           }
         };
@@ -1373,7 +1373,7 @@ async function handleCheckoutSubmit(e) {
     alert("There was an issue processing your order. Please try again or call support.");
   } finally {
     checkoutBtn.disabled = false;
-    checkoutBtn.innerText = "Order Now via WhatsApp & Excel";
+    checkoutBtn.innerText = "Order Now";
   }
 }
 
