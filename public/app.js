@@ -2459,31 +2459,57 @@ async function handleProductSaveSubmit(e) {
 }
 
 // Dynamically populate delivery slots based on client's cut-off policies:
-// - Morning   (6:00 AM – 7:30 AM)  : order the PREVIOUS NIGHT (available only after 6 PM).
-// - Afternoon (11:00 AM – 12:30 PM): cut-off 10 AM today (1 hour before delivery).
-// - Evening   (5:00 PM – 6:30 PM)  : cut-off 4 PM today (1 hour before delivery).
-// All slots always shown; expired ones disabled so users understand the schedule.
+// - Morning   (6:00 AM – 7:30 AM)  : cut-off 12 AM midnight. Disabled from 12 AM to 7:30 AM.
+// - Afternoon (11:00 AM – 12:30 PM): cut-off 10 AM (1 hour before delivery).
+// - Evening   (5:00 PM – 6:30 PM)  : cut-off 4 PM (1 hour before delivery).
+// If a slot has passed, it shows as available for Tomorrow instead of being greyed out.
 function populateDeliverySlots() {
   const slotSelect = document.getElementById('cust-slot');
   if (!slotSelect) return;
 
-  const currentHour = new Date().getHours(); // 0–23
+  const now = new Date();
+  const currentHour = now.getHours(); // 0–23
+  const currentMinutes = now.getMinutes(); // 0–59
+  const currentTotalMinutes = currentHour * 60 + currentMinutes;
+
+  // Morning Slot: Cut-off is 12:00 AM (midnight).
+  // Grey out (disabled) from 12:00 AM to 7:30 AM (450 minutes).
+  const isMorningGrey = currentTotalMinutes >= 0 && currentTotalMinutes < 450; 
+  const morningValue = isMorningGrey ? "" : "Morning (Tomorrow) (6:00 AM – 7:30 AM)";
+  const morningLabel = isMorningGrey 
+    ? "Morning  —  6:00 AM to 7:30 AM  (order by 12 AM midnight)"
+    : "Morning (Tomorrow)  —  6:00 AM to 7:30 AM  (order by 12 AM midnight)";
+  const morningAvailable = !isMorningGrey;
+
+  // Afternoon Slot: Cut-off 10:00 AM
+  const isAfternoonToday = currentHour < 10;
+  const afternoonValue = isAfternoonToday ? "Afternoon (Today) (11:00 AM – 12:30 PM)" : "Afternoon (Tomorrow) (11:00 AM – 12:30 PM)";
+  const afternoonLabel = isAfternoonToday 
+    ? "Afternoon (Today)  —  11:00 AM to 12:30 PM  (order by 10 AM)" 
+    : "Afternoon (Tomorrow)  —  11:00 AM to 12:30 PM  (order by 10 AM tomorrow)";
+
+  // Evening Slot: Cut-off 4:00 PM (16:00)
+  const isEveningToday = currentHour < 16;
+  const eveningValue = isEveningToday ? "Evening (Today) (5:00 PM – 6:30 PM)" : "Evening (Tomorrow) (5:00 PM – 6:30 PM)";
+  const eveningLabel = isEveningToday 
+    ? "Evening (Today)  —  5:00 PM to 6:30 PM  (order by 4 PM)" 
+    : "Evening (Tomorrow)  —  5:00 PM to 6:30 PM  (order by 4 PM tomorrow)";
 
   const allSlots = [
     {
-      value: "Morning (6:00 AM – 7:30 AM)",
-      label: "Morning  —  6:00 AM to 7:30 AM  (order tonight after 6 PM)",
-      available: currentHour >= 18   // orderable only at night
+      value: morningValue,
+      label: morningLabel,
+      available: morningAvailable
     },
     {
-      value: "Afternoon (11:00 AM – 12:30 PM)",
-      label: "Afternoon  —  11:00 AM to 12:30 PM  (order by 10 AM)",
-      available: currentHour < 10   // cut-off: 10 AM
+      value: afternoonValue,
+      label: afternoonLabel,
+      available: true
     },
     {
-      value: "Evening (5:00 PM – 6:30 PM)",
-      label: "Evening  —  5:00 PM to 6:30 PM  (order by 4 PM)",
-      available: currentHour < 16   // cut-off: 4 PM
+      value: eveningValue,
+      label: eveningLabel,
+      available: true
     }
   ];
 
@@ -2496,7 +2522,6 @@ function populateDeliverySlots() {
   allSlots.forEach(slot => {
     const el = document.createElement('option');
     el.value = slot.available ? slot.value : '';
-    // Always show full timing + cut-off; append "— Not Available" if closed
     el.textContent = slot.available ? slot.label : slot.label + '  —  Not Available';
     el.disabled = !slot.available;
     slotSelect.appendChild(el);
